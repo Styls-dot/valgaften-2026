@@ -170,6 +170,71 @@
         .pulse-ring{animation:pulseRing 1s ease-out}
         @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(200,16,46,0.6)}100%{box-shadow:0 0 0 20px rgba(200,16,46,0)}}
 
+        /* ADHD MODE - constant action */
+
+        /* Countdown ring til næste opdatering */
+        .update-ring{position:fixed;bottom:20px;right:20px;z-index:200;width:54px;height:54px}
+        .update-ring svg{transform:rotate(-90deg)}
+        .update-ring circle.bg{fill:none;stroke:#141c2a;stroke-width:3}
+        .update-ring circle.fg{fill:none;stroke:#c8102e;stroke-width:3;stroke-dasharray:138.2;stroke-dashoffset:0;transition:stroke-dashoffset 0.5s linear}
+        .update-ring .ur-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#e84060;font-variant-numeric:tabular-nums}
+
+        /* Animerede parti-score tal */
+        .pt-pct{transition:transform 0.3s}
+        .pt-pct.bump{animation:numBump 0.4s ease}
+        @keyframes numBump{0%{transform:scale(1)}30%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+        /* Glødende blok-tal */
+        .bb-seats{transition:text-shadow 0.5s}
+        .bb-seats.glow-red{text-shadow:0 0 20px rgba(232,64,96,0.6)}
+        .bb-seats.glow-blue{text-shadow:0 0 20px rgba(74,144,217,0.6)}
+
+        /* Pulserende optællings-bar */
+        .cs-bar-fill{animation:barPulse 2s ease-in-out infinite}
+        @keyframes barPulse{0%,100%{opacity:1}50%{opacity:0.7}}
+
+        /* Parti-row highlight sweep */
+        .pt-row.sweep{background:linear-gradient(90deg,transparent 0%,rgba(255,209,92,0.06) 50%,transparent 100%);background-size:200% 100%;animation:sweep 1.5s ease}
+        @keyframes sweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+        /* Ticker speed up on new data */
+        .ticker-track.fast{animation-duration:15s!important}
+
+        /* Confetti for big wins */
+        .confetti-container{position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden}
+        .confetti{position:absolute;width:8px;height:8px;border-radius:2px;animation:confettiFall linear forwards}
+        @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+        /* Storkreds completion celebration */
+        .sk-item.just-done{animation:skCelebrate 1s ease}
+        @keyframes skCelebrate{0%{transform:scale(1)}20%{transform:scale(1.05);box-shadow:0 0 20px rgba(45,200,77,0.3)}100%{transform:scale(1);box-shadow:none}}
+
+        /* NEW badge for fresh data */
+        .new-badge{display:inline-block;background:#c8102e;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:6px;animation:newPulse 1s ease 3;vertical-align:middle}
+        @keyframes newPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+        /* Live data wave on header */
+        .top-bar.new-data{animation:headerWave 0.6s ease}
+        @keyframes headerWave{0%{border-bottom-color:#c8102e}50%{border-bottom-color:#ffd15c}100%{border-bottom-color:#c8102e}}
+
+        /* Feed items stack animation */
+        .feed-item{transform-origin:top center}
+        .feed-item:nth-child(1){opacity:1}
+        .feed-item:nth-child(2){opacity:0.9}
+        .feed-item:nth-child(3){opacity:0.8}
+        .feed-item:nth-child(n+6){opacity:0.5}
+
+        /* Floating vote counter */
+        .float-counter{position:fixed;bottom:20px;left:20px;z-index:200;background:#0c1018;border:1px solid #141c2a;border-radius:12px;padding:10px 16px;font-variant-numeric:tabular-nums}
+        .float-counter .fc-label{font-size:9px;color:#5a6280;text-transform:uppercase;letter-spacing:1px}
+        .float-counter .fc-value{font-size:22px;font-weight:800;color:#fff;transition:transform 0.3s}
+        .float-counter .fc-value.bump{animation:numBump 0.4s ease}
+        .float-counter .fc-sub{font-size:10px;color:#5a6280}
+
+        /* Vote particles flying to counter */
+        .vote-particle{position:fixed;z-index:300;pointer-events:none;font-size:14px;animation:particleFly 1.5s ease-in forwards}
+        @keyframes particleFly{0%{opacity:1;transform:scale(1)}80%{opacity:0.8}100%{opacity:0;transform:scale(0.3)}}
+
         @media(max-width:900px){
             .main{grid-template-columns:1fr}
             .right{max-height:none;border-left:none;border-top:1px solid #141c2a}
@@ -277,10 +342,29 @@
 <!-- POPUP CONTAINER -->
 <div class="popup-container" id="popups"></div>
 
+<!-- COUNTDOWN RING -->
+<div class="update-ring" id="updateRing">
+    <svg width="54" height="54" viewBox="0 0 54 54">
+        <circle class="bg" cx="27" cy="27" r="22"/>
+        <circle class="fg" id="ringCircle" cx="27" cy="27" r="22"/>
+    </svg>
+    <div class="ur-text" id="ringText">10</div>
+</div>
+
+<!-- FLOATING VOTE COUNTER -->
+<div class="float-counter" id="floatCounter">
+    <div class="fc-label">Stemmer talt</div>
+    <div class="fc-value" id="fcValue">0</div>
+    <div class="fc-sub" id="fcSub">venter på data</div>
+</div>
+
+<!-- CONFETTI CONTAINER -->
+<div class="confetti-container" id="confettiBox"></div>
+
 <script>
 // ====== CONFIG ======
 var DR = 'https://firestore.googleapis.com/v1/projects/drdk-portal-valhal-prod/databases/(default)/documents/';
-var INTERVAL = 15000;
+var INTERVAL = 10000; // 10 sekunder
 var redBloc = ['A','F','Ø','B','Å'];
 var blueBloc = ['V','I','C','Æ','O','Q','H'];
 var skNames = ['København','Kbh. Omegn','Nordsjælland','Bornholm','Sjælland','Fyn','Sydjylland','Østjylland','Vestjylland','Nordjylland'];
@@ -379,7 +463,87 @@ function renderFeed(){
     });
 }
 
-addFeed('Dashboard startet – henter data fra DR hvert 15. sekund');
+addFeed('Dashboard startet – henter data fra DR hvert 10. sekund');
+
+// ====== ADHD FEATURES ======
+var prevTotalVotes=0;
+var updateCountdown=10;
+
+// Countdown ring
+function tickRing(){
+    updateCountdown--;
+    if(updateCountdown<0)updateCountdown=10;
+    var circ=138.2;
+    document.getElementById('ringCircle').style.strokeDashoffset=circ*(1-updateCountdown/10);
+    document.getElementById('ringText').textContent=updateCountdown;
+}
+setInterval(tickRing,1000);
+
+// Confetti burst
+function fireConfetti(count,colors){
+    var box=document.getElementById('confettiBox');
+    for(var i=0;i<count;i++){
+        var c=document.createElement('div');
+        c.className='confetti';
+        c.style.left=Math.random()*100+'%';
+        c.style.background=colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDuration=(1.5+Math.random()*2)+'s';
+        c.style.animationDelay=(Math.random()*0.5)+'s';
+        c.style.width=(4+Math.random()*8)+'px';
+        c.style.height=(4+Math.random()*8)+'px';
+        box.appendChild(c);
+        setTimeout(function(el){if(el.parentNode)el.parentNode.removeChild(el)},4000,c);
+    }
+}
+
+// Vote particle effect
+function spawnVoteParticle(text){
+    var el=document.createElement('div');
+    el.className='vote-particle';
+    el.textContent=text;
+    el.style.left=(20+Math.random()*60)+'%';
+    el.style.top=(10+Math.random()*30)+'%';
+    document.body.appendChild(el);
+    // Fly towards counter
+    var counter=document.getElementById('floatCounter').getBoundingClientRect();
+    el.style.transition='all 1.5s ease-in';
+    requestAnimationFrame(function(){
+        el.style.left=counter.left+'px';
+        el.style.top=counter.top+'px';
+    });
+    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},1600);
+}
+
+// Animate number counting up
+function animateValue(el,start,end,duration){
+    var range=end-start;
+    var startTime=null;
+    function step(ts){
+        if(!startTime)startTime=ts;
+        var progress=Math.min((ts-startTime)/duration,1);
+        var val=Math.floor(start+range*progress);
+        el.textContent=fmt(val);
+        if(progress<1)requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// Random fun facts ticker between updates
+var funFacts=[
+    'Vidste du? Spærregrænsen har eksisteret siden 1920',
+    'Fun fact: Folketinget har 179 pladser – 175 i DK + 4 fra Grønland/Færøerne',
+    'Vidste du? Den gennemsnitlige valgdeltagelse i DK er ~85%',
+    'Fun fact: Danmarks yngste statsminister var 32 år gammel',
+    'Vidste du? Et folketingsvalg skal holdes mindst hvert 4. år',
+    'Fun fact: Der er ca. 1.400 valgsteder i hele Danmark',
+    'Vidste du? Brevstemmer tælles først på valgdagen',
+    'Fun fact: Valgplakater må hænges op 3 uger før valg',
+];
+var factIdx=0;
+setInterval(function(){
+    addFeed('💡 '+funFacts[factIdx%funFacts.length]);
+    factIdx++;
+},45000);
 
 // ====== POPUPS ======
 var popupQueue=[];
@@ -510,6 +674,7 @@ async function scanValgsteder(){
 
                 showPopup({type:'storkreds',icon:'🗳️',tag:'Valgsted optalt',title:name,detail:detail});
                 addFeed('🗳️ <b>'+name+'</b> optalt'+(leading?' – '+leading+' størst':''));
+                spawnVoteParticle('🗳️');
             }
         });
     }catch(e){
@@ -531,10 +696,15 @@ async function fetchAll(){
         var resultType=exf(f,'ResultType')||'Setup';
         var totalVotes=exf(f,'TotalReceivedVotes')||0;
 
+        // Reset countdown
+        updateCountdown=10;
+
         // Status
         document.getElementById('csPct').textContent=countedPct.toFixed(2).replace('.',',')+' %';
         document.getElementById('csBar').style.width=countedPct+'%';
         document.getElementById('topCounted').textContent=countedPct.toFixed(2).replace('.',',')+' %';
+        document.querySelector('.top-bar').classList.add('new-data');
+        setTimeout(function(){document.querySelector('.top-bar').classList.remove('new-data')},600);
 
         var typeMap={'Setup':'VENTER','ExitPoll':'EXIT POLL','Preliminary':'FORELØBIG','Final':'ENDELIGT'};
         document.getElementById('topType').textContent=typeMap[resultType]||resultType;
@@ -553,7 +723,7 @@ async function fetchAll(){
         // Feed + Popup: counting milestones
         if(countedPct>=10&&prevCountedPct<10){addFeed('<b>10%</b> optalt',true);showPopup({type:'milestone',icon:'📈',tag:'Milepæl',title:'10% optalt',detail:'De første tendenser tegner sig'});}
         if(countedPct>=25&&prevCountedPct<25){addFeed('<b>25%</b> optalt',true);showPopup({type:'milestone',icon:'📊',tag:'Milepæl',title:'25% optalt',detail:'En fjerdedel af stemmerne er talt'});}
-        if(countedPct>=50&&prevCountedPct<50){addFeed('<b>50%</b> optalt – halvvejs!',true);showPopup({mega:true,icon:'⚡',bg:'gold-bg',title:'HALVVEJS!',detail:'50% af stemmerne er nu talt op'});}
+        if(countedPct>=50&&prevCountedPct<50){addFeed('<b>50%</b> optalt – halvvejs!',true);showPopup({mega:true,icon:'⚡',bg:'gold-bg',title:'HALVVEJS!',detail:'50% af stemmerne er nu talt op'});fireConfetti(80,['#ffd15c','#e84060','#4a90d9','#2dc84d','#fff']);}
         if(countedPct>=75&&prevCountedPct<75){addFeed('<b>75%</b> optalt',true);showPopup({type:'milestone',icon:'🔥',tag:'Slutspurt',title:'75% optalt!',detail:'Kun en fjerdedel tilbage',duration:8000});}
         if(countedPct>=90&&prevCountedPct<90){addFeed('<b>90%</b> optalt',true);showPopup({type:'milestone',icon:'🎯',tag:'Næsten færdig',title:'90% optalt!',detail:'Det endelige billede tegner sig'});}
         if(countedPct>=99&&prevCountedPct<99){addFeed('<b>99%</b> optalt!',true);showPopup({mega:true,icon:'🏁',bg:'gold-bg',title:'99% OPTALT',detail:'De allersidste stemmer tælles op'});}
@@ -598,7 +768,10 @@ async function fetchAll(){
                         ch.textContent=(diff>0?'+':'')+diff.toFixed(1);
                         ch.className='pt-change '+(diff>0?'up':'down');
                         row.classList.add('flash');
-                        setTimeout(function(){row.classList.remove('flash')},2000);
+                        row.classList.add('sweep');
+                        var pctEl=row.querySelector('.pt-pct');
+                        pctEl.classList.add('bump');
+                        setTimeout(function(){row.classList.remove('flash');row.classList.remove('sweep');pctEl.classList.remove('bump')},2000);
 
                         // Feed + popup significant changes
                         if(Math.abs(diff)>=0.5){
@@ -632,9 +805,12 @@ async function fetchAll(){
                     if(p.id==='M'){mS=p.seats;mP=p.pct}
                 });
 
-                document.getElementById('redSeats').textContent=rS;
-                document.getElementById('blueSeats').textContent=bS;
+                var redEl=document.getElementById('redSeats');
+                var blueEl=document.getElementById('blueSeats');
+                redEl.textContent=rS;blueEl.textContent=bS;
                 document.getElementById('mSeats').textContent=mS;
+                redEl.classList.add('glow-red');blueEl.classList.add('glow-blue');
+                setTimeout(function(){redEl.classList.remove('glow-red');blueEl.classList.remove('glow-blue')},2000);
                 document.getElementById('redPct').textContent=rP.toFixed(1)+'%';
                 document.getElementById('bluePct').textContent=bP.toFixed(1)+'%';
                 document.getElementById('bbRed').style.width=rP+'%';
@@ -662,12 +838,39 @@ async function fetchAll(){
                 if(prevBlocLead&&currentLead!==prevBlocLead){
                     if(currentLead==='red'){
                         showPopup({mega:true,icon:'🔴',bg:'red-bg',title:'RØD BLOK FØRER!',detail:rS+' mandater mod '+bS});
+                        fireConfetti(60,['#c8102e','#e84060','#ff6080','#fff']);
                     }else if(currentLead==='blue'){
                         showPopup({mega:true,icon:'🔵',bg:'blue-bg',title:'BLÅ BLOK FØRER!',detail:bS+' mandater mod '+rS});
+                        fireConfetti(60,['#1a5bb5','#4a90d9','#70b0f0','#fff']);
                     }
                     addFeed('<b>'+(currentLead==='red'?'Rød':'Blå')+' blok overtager føringen!</b>',true);
                 }
                 prevBlocLead=currentLead;
+
+                // Floating vote counter
+                var newTotalVotes=0;
+                parties.forEach(function(p){newTotalVotes+=p.votes});
+                if(newTotalVotes!==prevTotalVotes){
+                    var fcEl=document.getElementById('fcValue');
+                    if(newTotalVotes>0){
+                        animateValue(fcEl,prevTotalVotes,newTotalVotes,1200);
+                        fcEl.classList.add('bump');
+                        setTimeout(function(){fcEl.classList.remove('bump')},500);
+                        document.getElementById('fcSub').textContent=countedPct.toFixed(2)+'% optalt';
+                        // Vote particles
+                        if(newTotalVotes>prevTotalVotes){
+                            var gained=newTotalVotes-prevTotalVotes;
+                            for(var pi=0;pi<Math.min(5,Math.ceil(gained/1000));pi++){
+                                setTimeout(function(){spawnVoteParticle('🗳️')},pi*200);
+                            }
+                        }
+                    }
+                    prevTotalVotes=newTotalVotes;
+                }
+
+                // Speed up ticker when new data
+                document.getElementById('ticker').classList.add('fast');
+                setTimeout(function(){document.getElementById('ticker').classList.remove('fast')},5000);
 
                 // Check for flertal
                 if(rS+mS>=90&&prevBlocLead){
@@ -715,6 +918,9 @@ async function fetchAll(){
                         ski.dataset.notified='1';
                         addFeed('<b>'+skNames[i-1]+'</b> er færdigoptalt!',true);
                         showPopup({mega:true,icon:'✅',bg:'green-bg',title:skNames[i-1].toUpperCase()+' FÆRDIG!',detail:'Storkredsen er færdigoptalt'});
+                        fireConfetti(40,['#2dc84d','#3dd85d','#fff','#ffd15c']);
+                        ski.classList.add('just-done');
+                        setTimeout(function(s){s.classList.remove('just-done')},1000,ski);
                     }
                     // Popup when counting starts in a storkreds
                     if(sc>0&&!ski.dataset.started){
@@ -741,6 +947,12 @@ async function fetchAll(){
 
         // Senest opdateret
         document.getElementById('lastUpdate').textContent='Opdateret '+ts();
+
+        // ADHD: always show something happened
+        var valgstederCount=Object.keys(knownValgsteder).length;
+        if(valgstederCount>0){
+            document.getElementById('fcSub').textContent=valgstederCount+' valgsteder · '+countedPct.toFixed(2)+'%';
+        }
 
     }catch(err){
         addFeed('Fejl: '+err.message);
