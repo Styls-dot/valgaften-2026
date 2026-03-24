@@ -208,7 +208,7 @@
     <!-- EGEN PROGNOSE -->
     <div class="card" style="margin-bottom:12px;border-color:#ffd15c;border-width:2px">
         <h3 style="color:#ffd15c;font-size:12px">Egen prognose <span class="badge" style="background:#2a2515;color:#ffd15c" id="ownBadge">beregner...</span></h3>
-        <div style="font-size:10px;color:#8892a8;margin-bottom:8px">Per-storkreds swing-model: Beregner ændring fra FV2022 i hver storkreds. Projicerer uoptalte områder med vægtet gennemsnitsswing. d'Hondt mandatberegning.</div>
+        <div style="font-size:10px;color:#8892a8;margin-bottom:8px">Live optalte stemmer direkte fra DR. Mandater og regeringsmuligheder beregnet med d'Hondt. Sammenlignet med FV2022.</div>
         <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="modelMeta">
             <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Optalt</span> <b style="color:#fff" id="mPctCount">0%</b></div>
             <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Vægt reel</span> <b style="color:#2dc84d" id="mWeightReal">0%</b></div>
@@ -736,15 +736,27 @@ async function fetchAll(){
         });
         if(newVS.length>6)addFeed('🗳️ ...og '+(newVS.length-6)+' flere valgsteder optalt');
 
-        // 3b) Kør prognosemodel
-        var prog=buildPrognosis(countedPct,ownVotes,ownTotal,ownCount);
-        document.getElementById('ownBadge').textContent=countedPct.toFixed(1)+'% optalt';
+        // 3b) Brug LIVE data direkte (97%+ optalt = reelle tal)
+        // Byg prognose direkte fra DRs optalte data
+        var prog=[];
+        parties.forEach(function(p){
+            var d22=fv22[p.id]!==undefined?(p.pct-fv22[p.id]):0;
+            prog.push({id:p.id,name:p.name,color:p.color,pct:p.pct,votes:p.votes,seats:p.seats,d22:d22,drPct:p.pct});
+        });
+        prog.sort(function(a,b){return b.pct-a.pct});
+
+        document.getElementById('ownBadge').textContent=countedPct.toFixed(1)+'% optalt · '+fmt(natVotes)+' stemmer';
+        document.getElementById('mPctCount').textContent=countedPct.toFixed(1)+'%';
+        document.getElementById('mVSCount').textContent=ownCount;
+        document.getElementById('mVotes').textContent=fmt(natVotes);
+        document.getElementById('mWeightReal').textContent='100%';
+        document.getElementById('mWeightExit').textContent='0%';
 
         // Opdater prognose-tabel
         prog.forEach(function(o){
             var row=document.getElementById('own-'+o.id);if(!row)return;
             document.getElementById('ownf-'+o.id).style.width=(o.pct/30*100)+'%';
-            document.getElementById('owndr-'+o.id).style.width=(o.drPct/30*100)+'%';
+            document.getElementById('owndr-'+o.id).style.width='0%';
             document.getElementById('ownp-'+o.id).textContent=o.pct>0?o.pct.toFixed(1)+'%':'–';
             document.getElementById('ownv-'+o.id).textContent=o.seats>0?o.seats+' md':'';
             var d22el=document.getElementById('ownd-'+o.id);
@@ -755,10 +767,7 @@ async function fetchAll(){
         });
 
         // Opdater swing + model insight
-        parties.forEach(function(p){
-            var pr2=prog.find(function(o){return o.id===p.id});
-            p.ownPct=pr2?pr2.pct:0;
-        });
+        parties.forEach(function(p){p.ownPct=p.pct});
         updateModelInsight(prog);
         calcGovOptions(prog);
 
