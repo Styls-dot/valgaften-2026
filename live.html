@@ -294,91 +294,84 @@ async function fetchAll(){
         if(countedPct>=95&&prevCounted<95)addFeed('🏁 <b>95% optalt!</b>',true);
         prevCounted=countedPct;
 
-        // 2) Hent RIGTIGE stemmer fra optalte valgsteder
-        var r2=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'FV2026-geography-results'}],where:{fieldFilter:{field:{fieldPath:'TotalReceivedVotes'},op:'GREATER_THAN',value:{integerValue:'0'}}},limit:500,orderBy:[{field:{fieldPath:'TotalReceivedVotes'},direction:'DESCENDING'}]}})});
+        // 2) Brug nationale data direkte (DR opdaterer dem nu med rigtige stemmer)
+        var natVotes=exf(nf,'TotalReceivedVotes')||0;
+        var npr=exf(nf,'PartyResults');
+        var useReal=natVotes>0&&natType!=='ExitPoll'&&natType!=='Setup';
 
-        var realVotes={};var realTotal=0;var realCount=0;var newVS=[];
-        if(r2.ok){
-            var rd=await r2.json();
-            if(Array.isArray(rd)){rd.forEach(function(item){
-                if(!item.document)return;
-                var ff=item.document.fields;
-                var gt=exf(ff,'GeographyType')||'';
-                if(gt!=='VotingArea'&&gt!=='NominatingDistrict')return;
-                var v=exf(ff,'TotalReceivedVotes')||0;
-                if(v<=0)return;
-                // Only count VotingAreas to avoid double counting
-                if(gt==='VotingArea'){
-                    realTotal+=v;realCount++;
-                    var pr=exf(ff,'PartyResults');
-                    if(pr&&Array.isArray(pr)){pr.forEach(function(e){var ef=e.mapValue?e.mapValue.fields:null;if(!ef)return;var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;var let2=exf(pf,'Letter')||exf(ef,'Letter');var pv=exf(ef,'Votes')||0;if(let2&&pv>0)realVotes[let2]=(realVotes[let2]||0)+pv})}
-                    // New valgsted popup med FV22-sammenligning
-                    var vsId=exf(ff,'Id')||exf(ff,'GeographyKey')||'';
-                    if(vsId&&!knownVS[vsId]){
-                        knownVS[vsId]=true;
-                        var vsName=exf(ff,'FullGeographyName')||exf(ff,'GeographyName')||vsId;
-                        var leading=exf(ff,'LeadingPartyLetter')||'';
-                        // Beregn FV22-diff for dette valgsted
-                        var vsDiffs=[];
-                        if(pr&&Array.isArray(pr)){pr.forEach(function(e2){
-                            var ef2=e2.mapValue?e2.mapValue.fields:null;if(!ef2)return;
-                            var pf2=ef2.Party?(ef2.Party.mapValue?ef2.Party.mapValue.fields:ef2):ef2;
-                            var l2=exf(pf2,'Letter')||exf(ef2,'Letter');
-                            var pp=exf(ef2,'VotesSharePct')||0;
-                            if(l2&&pp>0&&fv22[l2]!==undefined){var dd=pp-fv22[l2];if(Math.abs(dd)>=1.5)vsDiffs.push({id:l2,diff:dd,pct:pp})}
-                        })}
-                        vsDiffs.sort(function(a,b){return Math.abs(b.diff)-Math.abs(a.diff)});
-                        newVS.push({name:vsName,votes:v,leading:leading,diffs:vsDiffs.slice(0,3)});
-                    }
-                }
-            })}
+        // Opdater partier fra nationale tal
+        if(npr&&Array.isArray(npr)){npr.forEach(function(e){
+            var ef=e.mapValue?e.mapValue.fields:null;if(!ef)return;
+            var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;
+            var let2=exf(pf,'Letter')||exf(ef,'Letter');
+            var pct=exf(ef,'VotesSharePct')||0;
+            var seats=exf(ef,'Seats')||0;
+            var votes=exf(ef,'Votes')||0;
+            var p=parties.find(function(x){return x.id===let2});
+            if(p){p.prev=p.pct;p.pct=pct;p.seats=seats;p.votes=votes}
+        })}
+
+        var badge=document.getElementById('dataBadge');
+        if(useReal){
+            badge.textContent='LIVE · '+fmt(natVotes)+' stemmer · '+countedPct.toFixed(1)+'%';
+            badge.className='badge badge-live';
+            document.getElementById('srcLabel').textContent=natType+' · '+fmt(natVotes)+' stemmer optalt';
+        } else {
+            badge.textContent=natType==='ExitPoll'?'EXIT POLL':'VENTER';
+            badge.className='badge badge-exit';
+            document.getElementById('srcLabel').textContent='DR '+natType;
         }
 
-        // Show new valgsted popups (staggered) med FV22-sammenligning
-        newVS.slice(0,8).forEach(function(vs,i){
+        document.getElementById('cDetail').textContent=fmt(natVotes)+' stemmer · '+natType;
+
+        // 3) Hent nye valgsteder for popups
+        var newVS=[];
+        try{
+            var r2=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'FV2026-geography-results'}],where:{fieldFilter:{field:{fieldPath:'TotalReceivedVotes'},op:'GREATER_THAN',value:{integerValue:'0'}}},limit:200,orderBy:[{field:{fieldPath:'TotalReceivedVotes'},direction:'DESCENDING'}]}})});
+            if(r2.ok){
+                var rd=await r2.json();
+                if(Array.isArray(rd)){rd.forEach(function(item){
+                    if(!item.document)return;
+                    var ff=item.document.fields;
+                    var gt=exf(ff,'GeographyType')||'';
+                    if(gt!=='VotingArea')return;
+                    var vsId=exf(ff,'Id')||exf(ff,'GeographyKey')||'';
+                    if(!vsId||knownVS[vsId])return;
+                    knownVS[vsId]=true;
+                    var vsName=exf(ff,'FullGeographyName')||exf(ff,'GeographyName')||vsId;
+                    var leading=exf(ff,'LeadingPartyLetter')||'';
+                    var v=exf(ff,'TotalReceivedVotes')||0;
+                    var vsDiffs=[];
+                    var pr=exf(ff,'PartyResults');
+                    if(pr&&Array.isArray(pr)){pr.forEach(function(e2){
+                        var ef2=e2.mapValue?e2.mapValue.fields:null;if(!ef2)return;
+                        var pf2=ef2.Party?(ef2.Party.mapValue?ef2.Party.mapValue.fields:ef2):ef2;
+                        var l2=exf(pf2,'Letter')||exf(ef2,'Letter');
+                        var pp=exf(ef2,'VotesSharePct')||0;
+                        if(l2&&pp>0&&fv22[l2]!==undefined){var dd=pp-fv22[l2];if(Math.abs(dd)>=1.5)vsDiffs.push({id:l2,diff:dd})}
+                    })}
+                    vsDiffs.sort(function(a,b){return Math.abs(b.diff)-Math.abs(a.diff)});
+                    newVS.push({name:vsName,votes:v,leading:leading,diffs:vsDiffs.slice(0,3)});
+                })}
+            }
+        }catch(e){}
+
+        // Show new valgsted popups
+        newVS.slice(0,6).forEach(function(vs,i){
             setTimeout(function(){
                 var pc=parties.find(function(p){return p.id===vs.leading});
                 var clr=pc?pc.color:'#5a6280';
                 var detail='<span style="color:'+clr+'">'+vs.leading+'</span> størst · '+fmt(vs.votes)+' stemmer';
                 if(vs.diffs&&vs.diffs.length>0){
                     detail+='<br><span style="font-size:10px">vs FV22: ';
-                    detail+=vs.diffs.map(function(d){
-                        var c2=d.diff>0?'#2dc84d':'#e84060';
-                        return '<b>'+d.id+'</b> <span style="color:'+c2+'">'+(d.diff>0?'+':'')+d.diff.toFixed(1)+'</span>';
-                    }).join(' · ');
+                    detail+=vs.diffs.map(function(d){var c2=d.diff>0?'#2dc84d':'#e84060';return '<b>'+d.id+'</b> <span style="color:'+c2+'">'+(d.diff>0?'+':'')+d.diff.toFixed(1)+'</span>'}).join(' · ');
                     detail+='</span>';
                 }
                 showPopup(vs.name,detail);
-                // Feed med kort FV22 swing
-                var feedDiff=vs.diffs&&vs.diffs.length>0?' ('+vs.diffs[0].id+(vs.diffs[0].diff>0?' +':' ')+vs.diffs[0].diff.toFixed(1)+' vs FV22)':'';
-                addFeed('🗳️ <b>'+vs.name+'</b> – '+vs.leading+' størst · '+fmt(vs.votes)+' st.'+feedDiff);
-            },i*700);
+                addFeed('🗳️ <b>'+vs.name+'</b> – '+vs.leading+' størst · '+fmt(vs.votes)+' st.');
+            },i*800);
         });
-        if(newVS.length>8)addFeed('🗳️ ...og '+(newVS.length-8)+' flere valgsteder optalt');
-
-        document.getElementById('cDetail').textContent=realCount+' valgsteder · '+fmt(realTotal)+' stemmer';
-
-        // 3) Bestem datakilde: rigtige stemmer eller exit poll
-        var useReal=realTotal>0;
-        var badge=document.getElementById('dataBadge');
-        if(useReal){
-            badge.textContent='LIVE · '+fmt(realTotal)+' stemmer';
-            badge.className='badge badge-live';
-            document.getElementById('srcLabel').textContent='Live data fra '+realCount+' valgsteder';
-            // Beregn procenter fra rigtige stemmer
-            parties.forEach(function(p){
-                p.prev=p.pct;
-                p.votes=realVotes[p.id]||0;
-                p.pct=realTotal>0?(p.votes/realTotal*100):0;
-            });
-        } else {
-            badge.textContent='EXIT POLL';
-            badge.className='badge badge-exit';
-            document.getElementById('srcLabel').textContent='DR Exit Poll (venter på optalte stemmer)';
-            // Brug exit poll fra national
-            var npr=exf(nf,'PartyResults');
-            if(npr&&Array.isArray(npr)){npr.forEach(function(e){var ef=e.mapValue?e.mapValue.fields:null;if(!ef)return;var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;var let2=exf(pf,'Letter')||exf(ef,'Letter');var pct=exf(ef,'VotesSharePct')||0;var seats=exf(ef,'Seats')||0;var p=parties.find(function(x){return x.id===let2});if(p){p.prev=p.pct;p.pct=pct;p.seats=seats;p.votes=0}})}
-        }
+        if(newVS.length>6)addFeed('🗳️ ...og '+(newVS.length-6)+' flere valgsteder optalt');
 
         // 4) Update party table (sorted)
         var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
