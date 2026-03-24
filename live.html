@@ -170,6 +170,14 @@
         .pulse-ring{animation:pulseRing 1s ease-out}
         @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(200,16,46,0.6)}100%{box-shadow:0 0 0 20px rgba(200,16,46,0)}}
 
+        /* DENMARK MAP */
+        #dkMap path{transition:fill 1s ease,filter 0.5s;cursor:pointer}
+        #dkMap path:hover{filter:brightness(1.4)}
+        #dkMap path.counting{fill:#2a1520;filter:drop-shadow(0 0 4px rgba(232,64,96,0.3))}
+        #dkMap path.done{fill:#152a15;filter:drop-shadow(0 0 6px rgba(45,200,77,0.4))}
+        #dkMap path.pulse-map{animation:mapPulse 1s ease}
+        @keyframes mapPulse{0%{filter:brightness(1)}50%{filter:brightness(2) drop-shadow(0 0 12px rgba(255,209,92,0.5))}100%{filter:brightness(1)}}
+
         /* ADHD MODE - constant action */
 
         /* Countdown ring til næste opdatering */
@@ -327,6 +335,45 @@
 
 <!-- RIGHT SIDEBAR -->
 <div class="right">
+
+    <div class="section-h">Danmarkskort</div>
+    <div class="chart-wrap" style="padding:8px">
+        <svg id="dkMap" viewBox="0 0 400 500" style="width:100%;height:auto">
+            <!-- Simplified Denmark map by storkreds -->
+            <!-- Nordjylland -->
+            <path id="map-10" d="M180,30 L220,25 L260,40 L270,80 L250,110 L230,105 L200,120 L180,110 L160,80 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Vestjylland -->
+            <path id="map-9" d="M140,110 L180,110 L200,120 L210,160 L200,200 L180,210 L150,200 L130,170 L120,140 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Østjylland -->
+            <path id="map-8" d="M200,120 L230,105 L250,110 L260,140 L250,180 L240,200 L210,210 L200,200 L210,160 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Sydjylland -->
+            <path id="map-7" d="M150,200 L180,210 L200,200 L210,210 L240,200 L240,240 L230,270 L210,290 L180,300 L160,280 L140,250 L130,220 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Fyn -->
+            <path id="map-6" d="M220,280 L250,270 L270,285 L275,310 L260,330 L235,325 L220,305 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Sjælland -->
+            <path id="map-5" d="M270,260 L310,250 L340,270 L350,310 L340,350 L310,360 L280,350 L265,320 L270,290 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Nordsjælland -->
+            <path id="map-3" d="M290,220 L320,210 L350,220 L355,245 L340,270 L310,250 L290,240 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Københavns Omegn -->
+            <path id="map-2" d="M310,250 L340,270 L355,260 L365,280 L355,300 L340,290 L325,280 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- København -->
+            <path id="map-1" d="M340,270 L355,260 L370,270 L375,290 L365,300 L355,300 L340,290 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+            <!-- Bornholm -->
+            <path id="map-4" d="M370,200 L390,195 L395,215 L385,230 L370,225 Z" fill="#141c2a" stroke="#1e2640" stroke-width="1"/>
+
+            <!-- Labels -->
+            <text x="210" y="75" font-size="9" fill="#5a6280" text-anchor="middle">Nordjylland</text>
+            <text x="165" y="160" font-size="9" fill="#5a6280" text-anchor="middle">Vestjylland</text>
+            <text x="235" y="155" font-size="9" fill="#5a6280" text-anchor="middle">Østjylland</text>
+            <text x="190" y="250" font-size="9" fill="#5a6280" text-anchor="middle">Sydjylland</text>
+            <text x="248" y="305" font-size="9" fill="#5a6280" text-anchor="middle">Fyn</text>
+            <text x="310" y="315" font-size="9" fill="#5a6280" text-anchor="middle">Sjælland</text>
+            <text x="325" y="235" font-size="8" fill="#5a6280" text-anchor="middle">Nordsjæll.</text>
+            <text x="340" y="280" font-size="7" fill="#5a6280" text-anchor="middle">Kbh.O</text>
+            <text x="358" y="287" font-size="7" fill="#5a6280" text-anchor="middle">Kbh</text>
+            <text x="383" y="215" font-size="8" fill="#5a6280" text-anchor="middle">Born.</text>
+        </svg>
+    </div>
 
     <div class="section-h">Optalte stemmer</div>
     <div class="chart-wrap">
@@ -548,7 +595,7 @@ setInterval(function(){
 // ====== POPUPS ======
 var popupQueue=[];
 var popupActive=0;
-var MAX_POPUPS=3;
+var MAX_POPUPS=6;
 
 function showPopup(opts){
     // opts: {type, icon, tag, title, detail, duration, mega}
@@ -616,11 +663,79 @@ parties.forEach(function(p){prevSpærre[p.id]=true});
 
 // ====== VALGSTED SCANNING ======
 var knownValgsteder={};
-var valgstedQueue=[];
+var valgstedQueue=[];  // queue popups so they don't all fire at once
+var valgstedCount=0;
+var MAX_POPUP_BURST=5; // max popups per scan cycle
+
+// Alle kommunekoder per storkreds (bruges til at bygge valgsted-URLs)
+var storkredsKommuner={
+    1:['0101','0147','0155','0185'], // København
+    2:['0151','0153','0157','0159','0161','0163','0165','0167','0169','0173','0175','0183','0187','0190'], // Kbh omegn
+    3:['0201','0210','0217','0219','0223','0230','0240','0250','0260','0270'], // Nordsjælland
+    4:['0400'], // Bornholm
+    5:['0253','0259','0265','0269','0306','0316','0320','0326','0329','0330','0336','0340','0350','0360','0370','0376','0390'], // Sjælland
+    6:['0410','0420','0430','0440','0450','0461','0479','0480','0482','0492'], // Fyn
+    7:['0510','0530','0540','0550','0561','0563','0573','0575','0580','0607','0621','0630'], // Sydjylland
+    8:['0615','0657','0661','0665','0706','0707','0710','0727','0730','0740','0741','0746','0751','0756'], // Østjylland
+    9:['0657','0660','0671','0706','0756','0760','0766','0779','0791'], // Vestjylland
+   10:['0773','0787','0810','0813','0820','0825','0840','0846','0849','0851','0860'] // Nordjylland
+};
+
+// Track which kommuner we've scanned
+var scannedPages={};
+
+function parseValgsted(f){
+    var id=exf(f,'Id')||exf(f,'GeographyKey')||'';
+    var name=exf(f,'FullGeographyName')||exf(f,'GeographyName')||id;
+    var rType=exf(f,'ResultType')||'Setup';
+    var votes=exf(f,'TotalReceivedVotes')||0;
+    var leading=exf(f,'LeadingPartyLetter')||'';
+
+    if(!id||rType==='Setup'||knownValgsteder[id])return null;
+
+    knownValgsteder[id]=true;
+    valgstedCount++;
+
+    // Byg parti-resultat sammenligning med FV2022
+    var pr=exf(f,'PartyResults');
+    var partyLines=[];
+    var comparison='';
+    var topParty='';var topPct=0;
+    if(pr&&Array.isArray(pr)){
+        var topChanges=[];
+        pr.forEach(function(entry){
+            var ef=entry.mapValue?entry.mapValue.fields:null;
+            if(!ef)return;
+            var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;
+            var letter=exf(pf,'Letter')||exf(ef,'Letter');
+            var pct=exf(ef,'VotesSharePct')||0;
+            var v=exf(ef,'Votes')||0;
+            if(letter&&pct>0){
+                if(pct>topPct){topPct=pct;topParty=letter}
+                partyLines.push(letter+' '+pct.toFixed(1)+'%');
+                if(fv2022[letter]!==undefined){
+                    var diff=pct-fv2022[letter];
+                    if(Math.abs(diff)>=1.5){
+                        topChanges.push('<b>'+letter+'</b> '+(diff>0?'<span style="color:#2dc84d">+':'<span style="color:#e84060">')+diff.toFixed(1)+'</span>');
+                    }
+                }
+            }
+        });
+        if(topChanges.length>0)comparison=topChanges.join(' · ')+' vs FV22';
+    }
+
+    return{
+        id:id, name:name, votes:votes, leading:topParty||leading,
+        partyLines:partyLines.slice(0,6).join(' · '),
+        comparison:comparison, topPct:topPct
+    };
+}
 
 async function scanValgsteder(){
+    var newSteder=[];
+
+    // Metode 1: Structured query (hent nyeste med resultater)
     try{
-        // Firestore structured query: find afstemningsomraader with results
         var body={structuredQuery:{
             from:[{collectionId:'FV2026-geography-results'}],
             where:{compositeFilter:{op:'AND',filters:[
@@ -628,58 +743,84 @@ async function scanValgsteder(){
                 {fieldFilter:{field:{fieldPath:'ResultType'},op:'NOT_EQUAL',value:{stringValue:'Setup'}}}
             ]}},
             orderBy:[{field:{fieldPath:'ResultType'},direction:'ASCENDING'},{field:{fieldPath:'DocumentUpdated'},direction:'DESCENDING'}],
-            limit:50
+            limit:100
         }};
         var res=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-        if(!res.ok)return;
-        var data=await res.json();
-        if(!Array.isArray(data))return;
+        if(res.ok){
+            var data=await res.json();
+            if(Array.isArray(data)){
+                data.forEach(function(item){
+                    if(!item.document)return;
+                    var v=parseValgsted(item.document.fields);
+                    if(v)newSteder.push(v);
+                });
+            }
+        }
+    }catch(e){}
 
-        data.forEach(function(item){
-            if(!item.document)return;
-            var f=item.document.fields;
-            var id=exf(f,'Id')||exf(f,'GeographyKey')||'';
-            var name=exf(f,'FullGeographyName')||exf(f,'GeographyName')||id;
-            var counted=exf(f,'CountedPct')||0;
-            var rType=exf(f,'ResultType')||'';
-            var votes=exf(f,'TotalReceivedVotes')||0;
-            var leading=exf(f,'LeadingPartyLetter')||'';
+    // Metode 2: Direkte scan af kendte valgsted-IDs (backup)
+    // Scan storkredse der har CountedPct > 0 og hent deres valgsteder
+    for(var si=1;si<=10;si++){
+        var ski=document.getElementById('ski-'+si);
+        if(!ski||!ski.dataset.started)continue;
+        var kommuner=storkredsKommuner[si]||[];
+        for(var ki=0;ki<kommuner.length;ki++){
+            var komKey=kommuner[ki];
+            // Scan first 30 valgsteder per kommune
+            for(var vi=1;vi<=30;vi++){
+                var vsId='afstemningsomraade-'+komKey+'-'+vi;
+                if(knownValgsteder[vsId])continue;
+                // Don't fetch too many at once
+                if(newSteder.length>=20)break;
+                try{
+                    var vr=await fetch(DR+'FV2026-geography-results/'+vsId);
+                    if(!vr.ok){break;} // no more in this kommune
+                    var vj=await vr.json();
+                    var parsed=parseValgsted(vj.fields);
+                    if(parsed)newSteder.push(parsed);
+                }catch(e){break;}
+            }
+            if(newSteder.length>=20)break;
+        }
+        if(newSteder.length>=20)break;
+    }
 
-            if(id&&!knownValgsteder[id]){
-                knownValgsteder[id]=true;
+    // Queue alle nye valgsteder for popups (staggered)
+    if(newSteder.length>0){
+        // Show burst of popups staggered
+        var shown=0;
+        newSteder.forEach(function(v,idx){
+            setTimeout(function(){
+                // Popup
+                var partyColor='#5a6280';
+                var p=parties.find(function(pp){return pp.id===v.leading});
+                if(p)partyColor=p.color;
 
-                // Sammenlign med 2022
-                var pr=exf(f,'PartyResults');
-                var comparison='';
-                if(pr&&Array.isArray(pr)){
-                    var topChanges=[];
-                    pr.forEach(function(entry){
-                        var ef=entry.mapValue?entry.mapValue.fields:null;
-                        if(!ef)return;
-                        var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;
-                        var letter=exf(pf,'Letter')||exf(ef,'Letter');
-                        var pct=exf(ef,'VotesSharePct')||0;
-                        if(letter&&fv2022[letter]!==undefined&&pct>0){
-                            var diff=pct-fv2022[letter];
-                            if(Math.abs(diff)>=2){
-                                topChanges.push(letter+' '+(diff>0?'+':'')+diff.toFixed(1));
-                            }
-                        }
-                    });
-                    if(topChanges.length>0)comparison=topChanges.join(', ')+' vs. FV2022';
+                var detail='<span style="color:'+partyColor+';font-weight:800">'+v.leading+' '+v.topPct.toFixed(1)+'%</span> · '+fmt(v.votes)+' stemmer';
+                if(v.partyLines)detail+='<br><span style="font-size:10px;color:#5a6280">'+v.partyLines+'</span>';
+                if(v.comparison)detail+='<br>'+v.comparison;
+
+                showPopup({type:'storkreds',icon:'🗳️',tag:'Valgsted #'+valgstedCount+' optalt',title:v.name,detail:detail,duration:5000});
+                addFeed('🗳️ <b>'+v.name+'</b> – '+v.leading+' '+v.topPct.toFixed(1)+'% · '+fmt(v.votes)+' st.');
+                spawnVoteParticle('🗳️');
+
+                // Every 10th valgsted, do a mini celebration
+                if(valgstedCount%10===0){
+                    showPopup({type:'milestone',icon:'🎯',tag:valgstedCount+' valgsteder!',title:valgstedCount+' valgsteder optalt',detail:'Stemmerne vælter ind!',duration:4000});
+                    fireConfetti(20,['#ffd15c','#e84060','#4a90d9','#2dc84d']);
+                }
+                // Every 50th
+                if(valgstedCount%50===0){
+                    showPopup({mega:true,icon:'🔥',bg:'gold-bg',title:valgstedCount+' VALGSTEDER!',detail:'Optællingen kører for fuld kraft'});
+                }
+                // Every 100th
+                if(valgstedCount%100===0){
+                    showPopup({mega:true,icon:'🚀',bg:'gold-bg',title:valgstedCount+' VALGSTEDER OPTALT!',detail:'Det er vildt!'});
+                    fireConfetti(100,['#ffd15c','#c8102e','#4a90d9','#2dc84d','#a78bfa','#fff']);
                 }
 
-                var detail=fmt(votes)+' stemmer'+(leading?' · '+leading+' størst':'');
-                if(comparison)detail+='<br>'+comparison;
-
-                showPopup({type:'storkreds',icon:'🗳️',tag:'Valgsted optalt',title:name,detail:detail});
-                addFeed('🗳️ <b>'+name+'</b> optalt'+(leading?' – '+leading+' størst':''));
-                spawnVoteParticle('🗳️');
-            }
+            },idx*800); // 800ms mellem hver popup
         });
-    }catch(e){
-        // Silently fail - structured query might not be supported
-        console.log('Valgsted scan:',e.message);
     }
 }
 
@@ -912,6 +1053,27 @@ async function fetchAll(){
                     else if(votes>0)ski.querySelector('.sk-n').textContent=skNames[i-1]+' · '+fmt(votes)+' st.';
                     if(st==='Final'){ski.classList.add('done')}
                     else{ski.classList.remove('done')}
+
+                    // Update map
+                    var mapPath=document.getElementById('map-'+i);
+                    if(mapPath){
+                        if(st==='Final'){
+                            mapPath.className.baseVal='done';
+                        }else if(sc>0){
+                            // Color intensity based on counted percentage
+                            var intensity=Math.min(sc/100,1);
+                            var r=Math.round(20+intensity*180);
+                            var g=Math.round(12+intensity*30);
+                            var b=Math.round(30+intensity*40);
+                            mapPath.style.fill='rgb('+r+','+g+','+b+')';
+                            mapPath.className.baseVal='counting';
+                            if(!mapPath.dataset.pulsed&&sc>0){
+                                mapPath.dataset.pulsed='1';
+                                mapPath.classList.add('pulse-map');
+                                setTimeout(function(mp){mp.classList.remove('pulse-map')},1000,mapPath);
+                            }
+                        }
+                    }
 
                     // Feed + mega popup when storkreds completes
                     if(st==='Final'&&!ski.dataset.notified){
