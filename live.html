@@ -167,15 +167,18 @@
     <div class="bloc-bar" style="margin:-4px 16px 12px"><div id="bbR" style="background:#e84060;width:33%"></div><div id="bbM" style="background:#a78bfa;width:8%"></div><div id="bbB" style="background:#4a90d9;width:33%"></div></div>
 
     <!-- EGEN PROGNOSE -->
-    <div class="card" style="margin-bottom:12px;border-color:#1a3a1a">
-        <h3>Egen prognose – kun optalte stemmer <span class="badge badge-live" id="ownBadge">0 valgsteder</span></h3>
-        <div style="font-size:10px;color:#5a6280;margin-bottom:10px">Beregnet udelukkende fra faktisk optalte valgsteder. Ingen fremskrivning – rene tal.</div>
-        <div id="ownTable"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #141c2a;flex-wrap:wrap;gap:6px">
-            <div style="font-size:11px;color:#5a6280">Optalte stemmer: <b style="color:#fff" id="ownTotal">0</b></div>
-            <div style="font-size:11px;color:#5a6280">Valgsteder: <b style="color:#fff" id="ownCount">0</b> af ~1.400</div>
-            <div style="font-size:11px;color:#5a6280">vs DR prognose: <span id="ownVsDR" style="color:#ffd15c">–</span></div>
+    <div class="card" style="margin-bottom:12px;border-color:#ffd15c;border-width:2px">
+        <h3 style="color:#ffd15c;font-size:12px">Egen prognose <span class="badge" style="background:#2a2515;color:#ffd15c" id="ownBadge">beregner...</span></h3>
+        <div style="font-size:10px;color:#8892a8;margin-bottom:8px">Bayesiansk model: Exit poll som prior, opdateret med optalte stemmer vægtet efter optællingsprocent. Jo mere der er optalt, jo mere vægter de rigtige tal.</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="modelMeta">
+            <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Optalt</span> <b style="color:#fff" id="mPctCount">0%</b></div>
+            <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Vægt reel</span> <b style="color:#2dc84d" id="mWeightReal">0%</b></div>
+            <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Vægt exit</span> <b style="color:#ffd15c" id="mWeightExit">100%</b></div>
+            <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Valgsteder</span> <b style="color:#fff" id="mVSCount">0</b></div>
+            <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Stemmer</span> <b style="color:#fff" id="mVotes">0</b></div>
         </div>
+        <div id="ownTable"></div>
+        <div style="font-size:9px;color:#3a4a5a;margin-top:8px">Modellen vægter optalte stemmer med (optalt%)^1.5 for at korrigere for at tidligt optalte valgsteder typisk er landområder. Mandater beregnet med modificeret d'Hondt.</div>
     </div>
 
     <div class="grid">
@@ -304,8 +307,61 @@ parties.forEach(function(p){
     ownT.appendChild(r);
 });
 
-// Own prognose data
-var ownParties={};
+// Exit poll baseline (DR kl 20:00)
+var exitPoll={A:19.2,F:11.4,I:10.5,V:9.3,M:8.2,'Æ':7.8,O:7.5,C:7.1,'Ø':6.4,B:6.0,'Å':4.1,H:2.1};
+
+// Prognose model
+function buildPrognosis(countedPct,ownVotes,ownTotal,ownCount){
+    // Bayesiansk vægtning: jo mere optalt, jo mere vægter de rigtige stemmer
+    // Brug countedPct^1.5 for at korrigere for rural bias i tidlige optællinger
+    var realWeight=Math.min(Math.pow(countedPct/100,1.5),0.98);
+    var exitWeight=1-realWeight;
+
+    document.getElementById('mPctCount').textContent=countedPct.toFixed(1)+'%';
+    document.getElementById('mWeightReal').textContent=(realWeight*100).toFixed(0)+'%';
+    document.getElementById('mWeightExit').textContent=(exitWeight*100).toFixed(0)+'%';
+    document.getElementById('mVSCount').textContent=ownCount;
+    document.getElementById('mVotes').textContent=fmt(ownTotal);
+
+    var prognosis=[];
+    parties.forEach(function(p){
+        var realPct=ownTotal>0?((ownVotes[p.id]||0)/ownTotal*100):0;
+        var exitPct=exitPoll[p.id]||0;
+        // Vægtet gennemsnit
+        var progPct;
+        if(ownTotal>0){
+            progPct=realPct*realWeight+exitPct*exitWeight;
+        }else{
+            progPct=exitPct;
+        }
+        var d22=fv22[p.id]!==undefined?(progPct-fv22[p.id]):0;
+        prognosis.push({id:p.id,name:p.name,color:p.color,pct:progPct,realPct:realPct,exitPct:exitPct,votes:ownVotes[p.id]||0,d22:d22,drPct:p.pct});
+    });
+
+    // Mandatberegning med d'Hondt (175 mandater, 2% spærregrænse)
+    var eligible=prognosis.filter(function(p){return p.pct>=2.0});
+    var totalEligiblePct=0;
+    eligible.forEach(function(p){totalEligiblePct+=p.pct});
+    // Normaliser
+    eligible.forEach(function(p){p.normPct=p.pct/totalEligiblePct*100});
+    // d'Hondt
+    var seats={};
+    eligible.forEach(function(p){seats[p.id]=0});
+    for(var m=0;m<175;m++){
+        var bestId='';var bestQuot=0;
+        eligible.forEach(function(p){
+            var quot=p.normPct/(seats[p.id]+1);
+            if(quot>bestQuot){bestQuot=quot;bestId=p.id}
+        });
+        if(bestId)seats[bestId]++;
+    }
+    prognosis.forEach(function(p){p.seats=seats[p.id]||0});
+
+    // Sort
+    prognosis.sort(function(a,b){return b.pct-a.pct});
+
+    return prognosis;
+}
 
 addFeed('Dashboard startet – henter data hvert 10. sekund');
 
@@ -417,37 +473,29 @@ async function fetchAll(){
         });
         if(newVS.length>6)addFeed('🗳️ ...og '+(newVS.length-6)+' flere valgsteder optalt');
 
-        // 3b) Opdater EGEN prognose fra rene optalte stemmer
-        if(ownTotal>0){
-            document.getElementById('ownBadge').textContent=ownCount+' valgsteder · '+fmt(ownTotal)+' stemmer';
-            document.getElementById('ownTotal').textContent=fmt(ownTotal);
-            document.getElementById('ownCount').textContent=ownCount;
-            // Beregn egne procenter og estimer mandater (simpel d'Hondt approx)
-            var ownSorted=parties.slice().map(function(p){
-                var v=ownVotes[p.id]||0;
-                var pct=ownTotal>0?(v/ownTotal*100):0;
-                var d22=fv22[p.id]!==undefined?(pct-fv22[p.id]):0;
-                var estSeats=pct>=2?Math.round(pct/100*175):0;
-                return{id:p.id,name:p.name,color:p.color,votes:v,pct:pct,d22:d22,seats:estSeats,drPct:p.pct};
-            }).sort(function(a,b){return b.pct-a.pct});
-            // Vis forskel til DR
-            var bigDiffs=ownSorted.filter(function(o){return Math.abs(o.pct-o.drPct)>=0.5&&o.pct>0}).map(function(o){var d=o.pct-o.drPct;return o.id+' '+(d>0?'+':'')+d.toFixed(1)});
-            document.getElementById('ownVsDR').innerHTML=bigDiffs.length>0?bigDiffs.join(' · '):'< 0,5 forskel';
-            // Opdater tabel
-            ownSorted.forEach(function(o){
-                var row=document.getElementById('own-'+o.id);if(!row)return;
-                document.getElementById('ownf-'+o.id).style.width=(o.pct/30*100)+'%';
-                document.getElementById('owndr-'+o.id).style.width=(o.drPct/30*100)+'%';
-                document.getElementById('ownp-'+o.id).textContent=o.pct>0?o.pct.toFixed(1)+'%':'–';
-                document.getElementById('ownv-'+o.id).textContent=o.votes>0?fmt(o.votes):'';
-                var d22el=document.getElementById('ownd-'+o.id);
-                if(o.pct>0){d22el.textContent=(o.d22>0?'+':'')+o.d22.toFixed(1);d22el.className='o-diff22 '+(o.d22>0.5?'up':(o.d22<-0.5?'down':'flat'))}
-                document.getElementById('owns-'+o.id).textContent=o.seats>0?o.seats:'';
-                ownT.appendChild(row);
-            });
-            // Opdater swing fra egne tal
-            parties.forEach(function(p){var ov=ownVotes[p.id]||0;p.ownPct=ownTotal>0?(ov/ownTotal*100):0});
-        }
+        // 3b) Kør prognosemodel
+        var prog=buildPrognosis(countedPct,ownVotes,ownTotal,ownCount);
+        document.getElementById('ownBadge').textContent=countedPct.toFixed(1)+'% optalt';
+
+        // Opdater prognose-tabel
+        prog.forEach(function(o){
+            var row=document.getElementById('own-'+o.id);if(!row)return;
+            document.getElementById('ownf-'+o.id).style.width=(o.pct/30*100)+'%';
+            document.getElementById('owndr-'+o.id).style.width=(o.drPct/30*100)+'%';
+            document.getElementById('ownp-'+o.id).textContent=o.pct>0?o.pct.toFixed(1)+'%':'–';
+            document.getElementById('ownv-'+o.id).textContent=o.seats>0?o.seats+' md':'';
+            var d22el=document.getElementById('ownd-'+o.id);
+            d22el.textContent=(o.d22>0?'+':'')+o.d22.toFixed(1);
+            d22el.className='o-diff22 '+(o.d22>0.5?'up':(o.d22<-0.5?'down':'flat'));
+            document.getElementById('owns-'+o.id).textContent='';
+            ownT.appendChild(row);
+        });
+
+        // Opdater swing fra prognose
+        parties.forEach(function(p){
+            var pr2=prog.find(function(o){return o.id===p.id});
+            p.ownPct=pr2?pr2.pct:0;
+        });
 
         // 4) Update party table (sorted)
         var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
