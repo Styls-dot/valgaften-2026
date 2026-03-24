@@ -109,6 +109,67 @@
         .cs-pct{font-size:18px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;min-width:60px;text-align:right}
         .cs-detail{font-size:10px;color:#5a6280;text-align:right}
 
+        /* POPUP NOTIFICATIONS */
+        .popup-container{position:fixed;top:80px;right:24px;z-index:500;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:400px}
+
+        .popup{
+            background:#0c1018;border-radius:14px;padding:18px 22px;
+            border:2px solid #1e2640;pointer-events:auto;
+            animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow:0 8px 40px rgba(0,0,0,0.5);
+            position:relative;overflow:hidden;
+        }
+        .popup.exit{animation:popOut 0.4s ease forwards}
+
+        .popup::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+        .popup.breaking{border-color:#c8102e}
+        .popup.breaking::before{background:#c8102e}
+        .popup.milestone{border-color:#ffd15c}
+        .popup.milestone::before{background:#ffd15c}
+        .popup.storkreds{border-color:#2dc84d}
+        .popup.storkreds::before{background:#2dc84d}
+        .popup.party{border-color:#a78bfa}
+        .popup.party::before{background:#a78bfa}
+        .popup.bloc{border-color:#4a90d9}
+        .popup.bloc::before{background:linear-gradient(90deg,#e84060,#4a90d9)}
+
+        .popup .pop-icon{font-size:28px;float:left;margin-right:12px;margin-top:2px}
+        .popup .pop-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+        .popup.breaking .pop-tag{color:#c8102e}
+        .popup.milestone .pop-tag{color:#ffd15c}
+        .popup.storkreds .pop-tag{color:#2dc84d}
+        .popup.party .pop-tag{color:#a78bfa}
+        .popup.bloc .pop-tag{color:#4a90d9}
+
+        .popup .pop-title{font-size:16px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:4px}
+        .popup .pop-detail{font-size:12px;color:#8892a8;line-height:1.4}
+        .popup .pop-time{font-size:10px;color:#5a6280;margin-top:6px;font-variant-numeric:tabular-nums}
+
+        .popup .pop-progress{margin-top:10px;height:4px;background:#141c2a;border-radius:2px;overflow:hidden}
+        .popup .pop-progress-fill{height:100%;background:#5a6280;border-radius:2px;animation:shrink 6s linear forwards}
+
+        @keyframes popIn{0%{opacity:0;transform:translateX(60px) scale(0.8)}100%{opacity:1;transform:translateX(0) scale(1)}}
+        @keyframes popOut{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(60px)}}
+        @keyframes shrink{0%{width:100%}100%{width:0%}}
+
+        /* FULLSCREEN FLASH for mega events */
+        .mega-flash{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;text-align:center;animation:megaIn 0.6s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
+        .mega-flash.exit{animation:megaOut 0.8s ease forwards}
+        .mega-flash.red-bg{background:rgba(200,16,46,0.92)}
+        .mega-flash.blue-bg{background:rgba(26,91,181,0.92)}
+        .mega-flash.gold-bg{background:rgba(40,30,10,0.95)}
+        .mega-flash.green-bg{background:rgba(10,40,15,0.95)}
+        .mega-flash .mf-icon{font-size:64px;margin-bottom:12px}
+        .mega-flash .mf-title{font-size:42px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 4px 20px rgba(0,0,0,0.3)}
+        .mega-flash .mf-sub{font-size:18px;color:rgba(255,255,255,0.7);margin-top:8px}
+
+        @keyframes megaIn{0%{opacity:0;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
+        @keyframes megaOut{0%{opacity:1}100%{opacity:0}}
+
+        /* Sound pulse on header */
+        .pulse-ring{animation:pulseRing 1s ease-out}
+        @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(200,16,46,0.6)}100%{box-shadow:0 0 0 20px rgba(200,16,46,0)}}
+
         @media(max-width:900px){
             .main{grid-template-columns:1fr}
             .right{max-height:none;border-left:none;border-top:1px solid #141c2a}
@@ -211,6 +272,9 @@
 
 </div>
 </div>
+
+<!-- POPUP CONTAINER -->
+<div class="popup-container" id="popups"></div>
 
 <script>
 // ====== CONFIG ======
@@ -315,6 +379,72 @@ function renderFeed(){
 
 addFeed('Dashboard startet – henter data fra DR hvert 15. sekund');
 
+// ====== POPUPS ======
+var popupQueue=[];
+var popupActive=0;
+var MAX_POPUPS=3;
+
+function showPopup(opts){
+    // opts: {type, icon, tag, title, detail, duration, mega}
+    if(opts.mega){
+        showMegaFlash(opts);
+        return;
+    }
+    var container=document.getElementById('popups');
+    var el=document.createElement('div');
+    el.className='popup '+opts.type;
+    el.innerHTML=
+        '<div class="pop-icon">'+opts.icon+'</div>'+
+        '<div class="pop-tag">'+opts.tag+'</div>'+
+        '<div class="pop-title">'+opts.title+'</div>'+
+        (opts.detail?'<div class="pop-detail">'+opts.detail+'</div>':'')+
+        '<div class="pop-time">'+ts()+'</div>'+
+        '<div class="pop-progress"><div class="pop-progress-fill"></div></div>';
+
+    container.appendChild(el);
+    popupActive++;
+
+    // Pulse header
+    document.querySelector('.top-bar').classList.add('pulse-ring');
+    setTimeout(function(){document.querySelector('.top-bar').classList.remove('pulse-ring')},1000);
+
+    var dur=opts.duration||6000;
+    setTimeout(function(){
+        el.classList.add('exit');
+        setTimeout(function(){
+            if(el.parentNode)el.parentNode.removeChild(el);
+            popupActive--;
+        },400);
+    },dur);
+
+    // Max popups
+    var all=container.querySelectorAll('.popup:not(.exit)');
+    if(all.length>MAX_POPUPS){
+        all[0].classList.add('exit');
+        setTimeout(function(){if(all[0].parentNode)all[0].parentNode.removeChild(all[0])},400);
+    }
+}
+
+function showMegaFlash(opts){
+    var el=document.createElement('div');
+    el.className='mega-flash '+(opts.bg||'gold-bg');
+    el.innerHTML=
+        '<div>'+
+        '<div class="mf-icon">'+opts.icon+'</div>'+
+        '<div class="mf-title">'+opts.title+'</div>'+
+        (opts.detail?'<div class="mf-sub">'+opts.detail+'</div>':'')+
+        '</div>';
+    document.body.appendChild(el);
+    setTimeout(function(){el.classList.add('exit')},3500);
+    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},4300);
+}
+
+// Track previous bloc lead
+var prevBlocLead='';
+var prevPartyOrder=[];
+var prevSpærre={};
+parties.forEach(function(p){prevSpærre[p.id]=true});
+
 // ====== LIVE FETCH ======
 async function fetchAll(){
     try{
@@ -336,18 +466,24 @@ async function fetchAll(){
         var typeMap={'Setup':'VENTER','ExitPoll':'EXIT POLL','Preliminary':'FORELØBIG','Final':'ENDELIGT'};
         document.getElementById('topType').textContent=typeMap[resultType]||resultType;
 
-        // Feed: type change
+        // Feed + Popup: type change
         if(resultType!==prevResultType&&prevResultType!==''){
             addFeed('Status skifter til <b>'+(typeMap[resultType]||resultType)+'</b>',true);
+            if(resultType==='Preliminary'){
+                showPopup({type:'breaking',icon:'📊',tag:'Status ændret',title:'Foreløbige resultater',detail:'De første rigtige stemmetal er nu i gang med at tikke ind!',duration:8000});
+            }else if(resultType==='Final'){
+                showPopup({mega:true,icon:'🏛️',bg:'gold-bg',title:'ENDELIGT RESULTAT',detail:'Alle stemmer er talt op!'});
+            }
         }
         prevResultType=resultType;
 
-        // Feed: counting milestones
-        if(countedPct>=25&&prevCountedPct<25)addFeed('<b>25%</b> af stemmerne er nu optalt',true);
-        if(countedPct>=50&&prevCountedPct<50)addFeed('<b>50%</b> af stemmerne er optalt – halvvejs!',true);
-        if(countedPct>=75&&prevCountedPct<75)addFeed('<b>75%</b> optalt – slutspurten begynder',true);
-        if(countedPct>=95&&prevCountedPct<95)addFeed('<b>95%</b> optalt – næsten færdig!',true);
-        if(countedPct>=100&&prevCountedPct<100)addFeed('Alle stemmer er optalt!',true);
+        // Feed + Popup: counting milestones
+        if(countedPct>=10&&prevCountedPct<10){addFeed('<b>10%</b> optalt',true);showPopup({type:'milestone',icon:'📈',tag:'Milepæl',title:'10% optalt',detail:'De første tendenser tegner sig'});}
+        if(countedPct>=25&&prevCountedPct<25){addFeed('<b>25%</b> optalt',true);showPopup({type:'milestone',icon:'📊',tag:'Milepæl',title:'25% optalt',detail:'En fjerdedel af stemmerne er talt'});}
+        if(countedPct>=50&&prevCountedPct<50){addFeed('<b>50%</b> optalt – halvvejs!',true);showPopup({mega:true,icon:'⚡',bg:'gold-bg',title:'HALVVEJS!',detail:'50% af stemmerne er nu talt op'});}
+        if(countedPct>=75&&prevCountedPct<75){addFeed('<b>75%</b> optalt',true);showPopup({type:'milestone',icon:'🔥',tag:'Slutspurt',title:'75% optalt!',detail:'Kun en fjerdedel tilbage',duration:8000});}
+        if(countedPct>=90&&prevCountedPct<90){addFeed('<b>90%</b> optalt',true);showPopup({type:'milestone',icon:'🎯',tag:'Næsten færdig',title:'90% optalt!',detail:'Det endelige billede tegner sig'});}
+        if(countedPct>=99&&prevCountedPct<99){addFeed('<b>99%</b> optalt!',true);showPopup({mega:true,icon:'🏁',bg:'gold-bg',title:'99% OPTALT',detail:'De allersidste stemmer tælles op'});}
         prevCountedPct=countedPct;
 
         // Party results
@@ -391,9 +527,13 @@ async function fetchAll(){
                         row.classList.add('flash');
                         setTimeout(function(){row.classList.remove('flash')},2000);
 
-                        // Feed significant changes
+                        // Feed + popup significant changes
                         if(Math.abs(diff)>=0.5){
                             addFeed('<b>'+p.id+' '+p.name+'</b> '+(diff>0?'stiger':'falder')+' til <b>'+p.pct.toFixed(1)+'%</b> ('+(diff>0?'+':'')+diff.toFixed(1)+')');
+                            showPopup({type:'party',icon:diff>0?'📈':'📉',tag:diff>0?'Fremgang':'Tilbagegang',title:p.id+' '+p.name+' '+p.pct.toFixed(1)+'%',detail:(diff>0?'+':'')+diff.toFixed(1)+' procentpoint siden sidst'});
+                        }
+                        if(Math.abs(diff)>=2.0){
+                            showPopup({mega:true,icon:diff>0?'🚀':'💥',bg:diff>0?'green-bg':'red-bg',title:p.id+' '+(diff>0?'EKSPLODERER':'STYRTDYKKER'),detail:p.pct.toFixed(1)+'% ('+(diff>0?'+':'')+diff.toFixed(1)+')'});
                         }
                     }else{
                         ch.textContent='–';ch.className='pt-change neutral';
@@ -420,6 +560,39 @@ async function fetchAll(){
                 document.getElementById('bbM').style.width=mP+'%';
                 document.getElementById('bbBlue').style.width=bP+'%';
 
+                // Spærregrænse-check
+                parties.forEach(function(p){
+                    var over=p.pct>=2.0;
+                    if(p.pct>0){
+                        if(!over&&prevSpærre[p.id]){
+                            showPopup({mega:true,icon:'🚨',bg:'red-bg',title:p.id+' UNDER SPÆRREGRÆNSEN',detail:p.name+' er på '+p.pct.toFixed(1)+'% – risikerer at ryge ud!'});
+                            addFeed('<b>'+p.name+'</b> er faldet under spærregrænsen!',true);
+                        }
+                        if(over&&!prevSpærre[p.id]){
+                            showPopup({type:'party',icon:'✅',tag:'Spærregrænse',title:p.id+' er OVER 2% igen',detail:p.name+' er på '+p.pct.toFixed(1)+'%'});
+                            addFeed('<b>'+p.name+'</b> er tilbage over spærregrænsen',true);
+                        }
+                        prevSpærre[p.id]=over;
+                    }
+                });
+
+                // Blokskift-check
+                var currentLead=rS>bS?'red':(bS>rS?'blue':'tie');
+                if(prevBlocLead&&currentLead!==prevBlocLead){
+                    if(currentLead==='red'){
+                        showPopup({mega:true,icon:'🔴',bg:'red-bg',title:'RØD BLOK FØRER!',detail:rS+' mandater mod '+bS});
+                    }else if(currentLead==='blue'){
+                        showPopup({mega:true,icon:'🔵',bg:'blue-bg',title:'BLÅ BLOK FØRER!',detail:bS+' mandater mod '+rS});
+                    }
+                    addFeed('<b>'+(currentLead==='red'?'Rød':'Blå')+' blok overtager føringen!</b>',true);
+                }
+                prevBlocLead=currentLead;
+
+                // Check for flertal
+                if(rS+mS>=90&&prevBlocLead){
+                    // Just notify once
+                }
+
                 // Seat chart
                 seatChart.data.datasets[0].data=parties.map(function(p){return p.seats});
                 seatChart.update('none');
@@ -436,31 +609,42 @@ async function fetchAll(){
                 var sf=sj.fields;
                 var sc=exf(sf,'CountedPct')||0;
                 var st=exf(sf,'ResultType')||'Setup';
-                var subDone=exf(sf,'CountedSubGeographies')||exf(sf,'SubGeographiesCounted')||0;
-                var subTotal=exf(sf,'NumberOfSubGeographies')||exf(sf,'SubGeographiesTotal')||0;
+                var constWithResults=exf(sf,'ConstituenciesWithResults')||[];
+                var subDone=Array.isArray(constWithResults)?constWithResults.length:0;
                 pollingDone+=subDone;
 
                 var ski=document.getElementById('ski-'+i);
                 if(ski){
                     ski.querySelector('.sk-bf').style.width=sc+'%';
                     ski.querySelector('.sk-p').textContent=sc.toFixed(2)+'%';
-                    if(subTotal>0)ski.querySelector('.sk-n').textContent=skNames[i-1]+' ('+subDone+'/'+subTotal+')';
+                    var votes=exf(sf,'TotalReceivedVotes')||0;
+                    if(subDone>0)ski.querySelector('.sk-n').textContent=skNames[i-1]+' · '+subDone+' kreds'+(subDone>1?'e':'');
+                    else if(votes>0)ski.querySelector('.sk-n').textContent=skNames[i-1]+' · '+fmt(votes)+' st.';
                     if(st==='Final'){ski.classList.add('done')}
                     else{ski.classList.remove('done')}
 
-                    // Feed when storkreds completes
+                    // Feed + mega popup when storkreds completes
                     if(st==='Final'&&!ski.dataset.notified){
                         ski.dataset.notified='1';
                         addFeed('<b>'+skNames[i-1]+'</b> er færdigoptalt!',true);
+                        showPopup({mega:true,icon:'✅',bg:'green-bg',title:skNames[i-1].toUpperCase()+' FÆRDIG!',detail:'Storkredsen er færdigoptalt'});
+                    }
+                    // Popup when counting starts in a storkreds
+                    if(sc>0&&!ski.dataset.started){
+                        ski.dataset.started='1';
+                        showPopup({type:'storkreds',icon:'📬',tag:'Optælling startet',title:skNames[i-1],detail:'De første stemmer tælles op'});
                     }
                 }
             }catch(e){}
         }
 
+        // Count done storkredse
+        var doneCount=document.querySelectorAll('.sk-item.done').length;
+        document.getElementById('csDetail').textContent=doneCount+' / 10 storkredse';
         if(pollingDone!==totalPollingDone&&pollingDone>0){
-            document.getElementById('csDetail').textContent=pollingDone+' valgsteder';
-            if(pollingDone>totalPollingDone+5){
-                addFeed(pollingDone+' valgsteder nu optalt (+' +(pollingDone-totalPollingDone)+')');
+            if(pollingDone>totalPollingDone){
+                addFeed('Nye kredse med resultater: <b>'+pollingDone+'</b> opstillingskredse');
+                showPopup({type:'storkreds',icon:'📊',tag:'Optælling',title:pollingDone+' kredse med resultater',detail:doneCount+' af 10 storkredse færdige'});
             }
             totalPollingDone=pollingDone;
         }
