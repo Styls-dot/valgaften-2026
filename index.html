@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folketingsvalg 2026 – Valgaften Overblik</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0a0e1a;
+            color: #e0e4ef;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #101d2f 0%, #1a2744 100%);
+            border-bottom: 3px solid #c8102e;
+            padding: 24px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .header h1 span { color: #c8102e; }
+
+        .header .date {
+            font-size: 14px;
+            color: #8892a8;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #c8102e;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .live-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Bloc overview */
+        .bloc-overview {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 0;
+            margin-bottom: 32px;
+            background: #141a2e;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #1e2640;
+        }
+
+        .bloc-card {
+            padding: 32px 40px;
+            text-align: center;
+        }
+
+        .bloc-card.red { background: linear-gradient(135deg, #2a1520 0%, #141a2e 100%); }
+        .bloc-card.blue { background: linear-gradient(135deg, #141a2e 0%, #152035 100%); }
+        .bloc-card.center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #1a2040;
+            padding: 24px 20px;
+        }
+
+        .bloc-card h2 {
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .bloc-card.red h2 { color: #e84060; }
+        .bloc-card.blue h2 { color: #4a90d9; }
+        .bloc-card.center h2 { color: #a78bfa; }
+
+        .bloc-pct {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .bloc-card.red .bloc-pct { color: #e84060; }
+        .bloc-card.blue .bloc-pct { color: #4a90d9; }
+        .bloc-card.center .bloc-pct { color: #a78bfa; font-size: 42px; }
+
+        .bloc-mandater {
+            font-size: 14px;
+            color: #8892a8;
+            margin-top: 6px;
+        }
+
+        .bloc-bar {
+            width: 100%;
+            height: 12px;
+            background: #0a0e1a;
+            border-radius: 6px;
+            margin-top: 16px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .bloc-bar-fill {
+            height: 100%;
+            transition: width 1s ease;
+        }
+
+        .bloc-bar-fill.red { background: linear-gradient(90deg, #c8102e, #e84060); }
+        .bloc-bar-fill.blue { background: linear-gradient(90deg, #1a5bb5, #4a90d9); }
+
+        /* Grid layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: #141a2e;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #1e2640;
+        }
+
+        .card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #8892a8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 20px;
+        }
+
+        .card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Party bars */
+        .party-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .party-letter {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .party-name {
+            width: 180px;
+            font-size: 13px;
+            font-weight: 500;
+            flex-shrink: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .party-bar-container {
+            flex: 1;
+            height: 24px;
+            background: #0d1222;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .party-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1.5s ease;
+            min-width: 2px;
+        }
+
+        .party-pct {
+            width: 52px;
+            text-align: right;
+            font-weight: 700;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .party-mandater {
+            width: 40px;
+            text-align: right;
+            font-size: 13px;
+            color: #8892a8;
+            flex-shrink: 0;
+        }
+
+        /* Spærregrænse */
+        .threshold-line {
+            position: absolute;
+            left: calc((2 / 25) * 100%);
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #c8102e;
+            opacity: 0.5;
+        }
+
+        /* Chart containers */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+
+        .chart-container.tall {
+            height: 400px;
+        }
+
+        /* Temaer */
+        .tema-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .tema-card {
+            background: #0d1222;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #1e2640;
+        }
+
+        .tema-card .tema-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .tema-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .tema-card p {
+            font-size: 12px;
+            color: #8892a8;
+            line-height: 1.5;
+        }
+
+        /* Partileder tabel */
+        .leader-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .leader-card {
+            background: #0d1222;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            border-left: 3px solid;
+        }
+
+        .leader-card .leader-party {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .leader-card .leader-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .leader-card .leader-role {
+            font-size: 11px;
+            color: #8892a8;
+            margin-top: 2px;
+        }
+
+        /* Spærregrænse note */
+        .note {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: #8892a8;
+        }
+
+        .note .dot {
+            width: 12px;
+            height: 2px;
+            background: #c8102e;
+            opacity: 0.6;
+        }
+
+        /* Kilde */
+        .source {
+            font-size: 11px;
+            color: #5a6280;
+            margin-top: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 32px;
+            color: #5a6280;
+            font-size: 12px;
+        }
+
+        /* Party detail modal */
+        .party-row { cursor: pointer; transition: background 0.2s; border-radius: 8px; padding: 4px 0; }
+        .party-row:hover { background: rgba(255,255,255,0.04); }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: #141a2e;
+            border: 1px solid #2a3050;
+            border-radius: 20px;
+            padding: 36px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #8892a8;
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-close:hover { color: #fff; }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .modal-letter {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 24px;
+            color: #fff;
+        }
+
+        .modal-party-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .modal-bloc {
+            font-size: 12px;
+            color: #8892a8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .modal-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .modal-stat {
+            background: #0d1222;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .modal-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .modal-stat-label {
+            font-size: 11px;
+            color: #8892a8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .modal-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .modal-compare-item {
+            background: #0d1222;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .modal-compare-label {
+            font-size: 11px;
+            color: #8892a8;
+            margin-bottom: 6px;
+        }
+
+        .modal-compare-bar {
+            height: 8px;
+            background: #0a0e1a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .modal-compare-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+
+        .modal-compare-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-chart-container {
+            height: 200px;
+            position: relative;
+        }
+
+        .modal-leader {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #0d1222;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-top: 16px;
+        }
+
+        .modal-leader-label {
+            font-size: 11px;
+            color: #8892a8;
+            text-transform: uppercase;
+        }
+
+        .modal-leader-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Responsiv */
+        @media (max-width: 1000px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .bloc-overview { grid-template-columns: 1fr; }
+            .tema-grid { grid-template-columns: 1fr 1fr; }
+            .leader-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .header { padding: 16px 20px; flex-wrap: wrap; gap: 8px; }
+            .header h1 { font-size: 20px; }
+            .container { padding: 12px; }
+            .tema-grid { grid-template-columns: 1fr; }
+            .leader-grid { grid-template-columns: 1fr; }
+            .party-name { width: 100px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>Folketingsvalg <span>2026</span></h1>
+        <div class="date">Tirsdag den 24. marts 2026</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px;">
+        <div class="live-badge">VALGAFTEN</div>
+        <div id="liveStatus" style="font-size:12px; color:#8892a8;"></div>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- OPTÆLLINGSSTATUS -->
+    <div id="countingBanner" style="background:#141a2e; border:1px solid #1e2640; border-radius:12px; padding:16px 24px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="font-size:13px; color:#8892a8; text-transform:uppercase; letter-spacing:0.5px;">Optalt</div>
+            <div id="countedPct" style="font-size:28px; font-weight:700; color:#fff;">–</div>
+        </div>
+        <div style="flex:1; min-width:200px; max-width:500px;">
+            <div style="height:8px; background:#0d1222; border-radius:4px; overflow:hidden;">
+                <div id="countedBar" style="height:100%; background:linear-gradient(90deg, #c8102e, #e84060); border-radius:4px; width:0%; transition:width 1s ease;"></div>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <div style="text-align:center;">
+                <div id="turnoutPct" style="font-size:18px; font-weight:600; color:#fff;">–</div>
+                <div style="font-size:10px; color:#8892a8; text-transform:uppercase;">Valgdeltagelse</div>
+            </div>
+            <div style="text-align:center;">
+                <div id="resultType" style="font-size:12px; font-weight:600; color:#e84060; background:#2a1520; padding:4px 10px; border-radius:6px;">VENTER</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOK-OVERBLIK -->
+    <div class="bloc-overview">
+        <div class="bloc-card red">
+            <h2>Rød Blok</h2>
+            <div class="bloc-pct">48,3%</div>
+            <div class="bloc-mandater">~ 85 mandater</div>
+            <div class="bloc-bar">
+                <div class="bloc-bar-fill red" style="width: 48.3%"></div>
+            </div>
+            <div class="source">A + F + Ø + B + Å</div>
+        </div>
+        <div class="bloc-card center">
+            <h2>Moderaterne</h2>
+            <div class="bloc-pct">7,1%</div>
+            <div class="bloc-mandater">~ 12 mandater</div>
+            <div style="margin-top:8px; font-size:12px; color:#a78bfa; font-weight:600;">KINGMAKER</div>
+            <div class="source" style="margin-top:6px">Flertal = 90 mandater</div>
+        </div>
+        <div class="bloc-card blue">
+            <h2>Blå Blok</h2>
+            <div class="bloc-pct">44,6%</div>
+            <div class="bloc-mandater">~ 79 mandater</div>
+            <div class="bloc-bar">
+                <div class="bloc-bar-fill blue" style="width: 44.6%"></div>
+            </div>
+            <div class="source">V + I + C + Æ + O + Q</div>
+        </div>
+    </div>
+
+    <!-- PARTI-BAROMETER -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h3>Partibarometer – Seneste meningsmålinger</h3>
+        <div id="partyBars"></div>
+        <div class="note">
+            <div class="dot"></div>
+            <span>Rød linje = spærregrænsen (2%)</span>
+        </div>
+        <div class="source">Kilde: Epinion/DR 21. marts · Voxmeter 23. marts 2026</div>
+    </div>
+
+    <!-- GRAFER ROW 1 -->
+    <div class="grid-2">
+        <div class="card">
+            <h3>Mandatfordeling (estimeret)</h3>
+            <div class="chart-container">
+                <canvas id="mandatChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Blokfordeling</h3>
+            <div class="chart-container">
+                <canvas id="blocChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRAFER ROW 2 -->
+    <div class="grid-2">
+        <div class="card">
+            <h3>Sammenligning: Epinion vs Voxmeter</h3>
+            <div class="chart-container tall">
+                <canvas id="compareChart"></canvas>
+            </div>
+            <div class="source">Epinion/DR 21. marts · Voxmeter 16. marts 2026</div>
+        </div>
+        <div class="card">
+            <h3>Blokstørrelse over tid (trend)</h3>
+            <div class="chart-container tall">
+                <canvas id="trendChart"></canvas>
+            </div>
+            <div class="source">Baseret på gennemsnit af meningsmålinger</div>
+        </div>
+    </div>
+
+    <!-- PARTILEDERE -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h3>Partiledere</h3>
+        <div class="leader-grid" id="leaderGrid"></div>
+    </div>
+
+    <!-- VALGTEMAER -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h3>Centrale valgtemaer</h3>
+        <div class="tema-grid">
+            <div class="tema-card">
+                <div class="tema-icon">🇬🇱</div>
+                <h4>Grønland & Trump</h4>
+                <p>Trumps trusler om annektering af Grønland har domineret valgkampen. Danmark opruster og søger EU-samarbejde.</p>
+            </div>
+            <div class="tema-card">
+                <div class="tema-icon">🛡️</div>
+                <h4>Forsvar & sikkerhed</h4>
+                <p>Forsvarsbudgettet hæves til 3,5% af BNP. Aftale med Frankrig om nuklear afskrækkelse.</p>
+            </div>
+            <div class="tema-card">
+                <div class="tema-icon">🇪🇺</div>
+                <h4>EU-samarbejde</h4>
+                <p>Ny opbakning til dybere EU-integration drevet af det ændrede sikkerhedsbillede.</p>
+            </div>
+            <div class="tema-card">
+                <div class="tema-icon">🏫</div>
+                <h4>Velfærd & uddannelse</h4>
+                <p>S kampagner på maks 14 elever i indskolingen. Bred debat om folkeskolens fremtid.</p>
+            </div>
+            <div class="tema-card">
+                <div class="tema-icon">💧</div>
+                <h4>Miljø & grundvand</h4>
+                <p>SF, Ø, B og Å kræver pesticid-forbud. Radikale vil halvere svineproduktionen.</p>
+            </div>
+            <div class="tema-card">
+                <div class="tema-icon">💰</div>
+                <h4>Pensionsalder & priser</h4>
+                <p>Flere partier vil bryde med den stigende pensionsalder. Fødevare- og brændstofpriser i fokus.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NUVÆRENDE REGERING -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h3>Afgående regering: SVM-koalitionen</h3>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+            <div style="background:#0d1222; padding:12px 20px; border-radius:10px; border-left:3px solid #c8102e;">
+                <div style="font-weight:600; color:#fff;">Socialdemokraterne (A)</div>
+                <div style="font-size:12px; color:#8892a8;">Mette Frederiksen</div>
+            </div>
+            <div style="font-size:20px; color:#5a6280;">+</div>
+            <div style="background:#0d1222; padding:12px 20px; border-radius:10px; border-left:3px solid #0054a0;">
+                <div style="font-weight:600; color:#fff;">Venstre (V)</div>
+                <div style="font-size:12px; color:#8892a8;">Troels Lund Poulsen</div>
+            </div>
+            <div style="font-size:20px; color:#5a6280;">+</div>
+            <div style="background:#0d1222; padding:12px 20px; border-radius:10px; border-left:3px solid #a78bfa;">
+                <div style="font-weight:600; color:#fff;">Moderaterne (M)</div>
+                <div style="font-size:12px; color:#8892a8;">Lars Løkke Rasmussen</div>
+            </div>
+            <div style="margin-left:auto; background:#1e2640; padding:8px 16px; border-radius:8px; font-size:13px; color:#8892a8;">
+                89 / 179 mandater
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- PARTI DETAIL MODAL -->
+<div class="modal-overlay" id="partyModal">
+    <div class="modal">
+        <button class="modal-close" id="modalClose">&times;</button>
+        <div class="modal-header">
+            <div class="modal-letter" id="modalLetter"></div>
+            <div>
+                <div class="modal-party-name" id="modalName"></div>
+                <div class="modal-bloc" id="modalBloc"></div>
+            </div>
+        </div>
+        <div class="modal-stats">
+            <div class="modal-stat">
+                <div class="modal-stat-value" id="modalPct"></div>
+                <div class="modal-stat-label">Seneste måling</div>
+            </div>
+            <div class="modal-stat">
+                <div class="modal-stat-value" id="modalMandater"></div>
+                <div class="modal-stat-label">Est. mandater</div>
+            </div>
+            <div class="modal-stat">
+                <div class="modal-stat-value" id="modalLeaderName"></div>
+                <div class="modal-stat-label" id="modalLeaderRole"></div>
+            </div>
+        </div>
+        <div class="modal-compare">
+            <div class="modal-compare-item">
+                <div class="modal-compare-label">Epinion/DR (21. marts)</div>
+                <div class="modal-compare-bar"><div class="modal-compare-fill" id="modalEpinionBar"></div></div>
+                <div class="modal-compare-value" id="modalEpinion"></div>
+            </div>
+            <div class="modal-compare-item">
+                <div class="modal-compare-label">Voxmeter (16. marts)</div>
+                <div class="modal-compare-bar"><div class="modal-compare-fill" id="modalVoxmeterBar"></div></div>
+                <div class="modal-compare-value" id="modalVoxmeter"></div>
+            </div>
+        </div>
+        <div class="modal-chart-container">
+            <canvas id="modalChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    Data baseret på Epinion/DR (21/3), Voxmeter (16/3, 23/3) og The Local (medio marts 2026).<br>
+    Mandatestimater er vejledende og kan afvige fra det endelige resultat.
+</div>
+
+<script>
+// ====== DATA ======
+const parties = [
+    { id: 'A', name: 'Socialdemokraterne', color: '#c8102e', pct: 21.5, mandater: 38, epinion: 20.0, voxmeter: 21.0, bloc: 'red' },
+    { id: 'F', name: 'Socialistisk Folkeparti', color: '#e4007e', pct: 12.8, mandater: 23, epinion: 12.6, voxmeter: 13.4, bloc: 'red' },
+    { id: 'I', name: 'Liberal Alliance', color: '#00bce4', pct: 12.1, mandater: 21, epinion: 11.0, voxmeter: 11.0, bloc: 'blue' },
+    { id: 'V', name: 'Venstre', color: '#0054a0', pct: 10.0, mandater: 18, epinion: 8.6, voxmeter: 8.9, bloc: 'blue' },
+    { id: 'Æ', name: 'Danmarksdemokraterne', color: '#0f4d3a', pct: 7.5, mandater: 13, epinion: 6.9, voxmeter: 7.7, bloc: 'blue' },
+    { id: 'O', name: 'Dansk Folkeparti', color: '#e4d600', pct: 7.0, mandater: 12, epinion: 9.5, voxmeter: 6.1, bloc: 'blue' },
+    { id: 'C', name: 'Konservative', color: '#00583c', pct: 6.5, mandater: 11, epinion: 7.6, voxmeter: 6.9, bloc: 'blue' },
+    { id: 'Ø', name: 'Enhedslisten', color: '#e6801a', pct: 6.4, mandater: 11, epinion: 7.9, voxmeter: 6.3, bloc: 'red' },
+    { id: 'M', name: 'Moderaterne', color: '#8b5cf6', pct: 6.2, mandater: 11, epinion: 6.6, voxmeter: 6.9, bloc: 'center' },
+    { id: 'B', name: 'Radikale Venstre', color: '#e4007e', pct: 5.1, mandater: 9, epinion: 5.0, voxmeter: 6.2, bloc: 'red' },
+    { id: 'Q', name: 'Borgernes Parti', color: '#1e3a5f', pct: 2.6, mandater: 4, epinion: 2.2, voxmeter: 3.3, bloc: 'blue' },
+    { id: 'Å', name: 'Alternativet', color: '#2dc84d', pct: 2.0, mandater: 4, epinion: 2.0, voxmeter: 2.2, bloc: 'red' },
+];
+
+const leaders = [
+    { party: 'Socialdemokraterne', letter: 'A', name: 'Mette Frederiksen', role: 'Statsminister', color: '#c8102e' },
+    { party: 'SF', letter: 'F', name: 'Pia Olsen Dyhr', role: 'Partiformand', color: '#e4007e' },
+    { party: 'Liberal Alliance', letter: 'I', name: 'Alex Vanopslagh', role: 'Partiformand', color: '#00bce4' },
+    { party: 'Venstre', letter: 'V', name: 'Troels Lund Poulsen', role: 'Forsvarsminister', color: '#0054a0' },
+    { party: 'Danmarksdem.', letter: 'Æ', name: 'Inger Støjberg', role: 'Partiformand', color: '#0f4d3a' },
+    { party: 'Dansk Folkeparti', letter: 'O', name: 'Morten Messerschmidt', role: 'Partiformand', color: '#e4d600' },
+    { party: 'Konservative', letter: 'C', name: 'Mona Juul', role: 'Partiformand', color: '#00583c' },
+    { party: 'Enhedslisten', letter: 'Ø', name: 'Pelle Dragsted', role: 'Pol. ordfører', color: '#e6801a' },
+    { party: 'Moderaterne', letter: 'M', name: 'Lars Løkke Rasmussen', role: 'Udenrigsminister', color: '#8b5cf6' },
+    { party: 'Radikale Venstre', letter: 'B', name: 'Martin Lidegaard', role: 'Partiformand', color: '#e4007e' },
+    { party: 'Borgernes Parti', letter: 'Q', name: 'Lars Boje Mathiesen', role: 'Partiformand', color: '#1e3a5f' },
+    { party: 'Alternativet', letter: 'Å', name: 'Franciska Rosenkilde', role: 'Pol. ordfører', color: '#2dc84d' },
+];
+
+// ====== TREND DATA PER PARTI ======
+const partyTrends = {
+    'A': [19.5, 20.0, 20.5, 21.0, 20.0, 22.4],
+    'F': [13.0, 12.5, 13.0, 13.4, 12.6, 11.8],
+    'I': [11.5, 11.2, 11.4, 11.0, 11.0, 10.8],
+    'V': [9.0, 9.2, 8.8, 8.9, 8.6, 9.7],
+    'Æ': [7.0, 7.2, 7.4, 7.7, 6.9, 6.9],
+    'O': [6.5, 7.0, 7.5, 6.1, 9.5, 7.6],
+    'C': [7.0, 7.2, 6.8, 6.9, 7.6, 6.5],
+    'Ø': [7.5, 7.0, 6.8, 6.3, 7.9, 6.4],
+    'M': [7.0, 6.8, 6.5, 6.9, 6.6, 7.1],
+    'B': [5.5, 5.2, 5.5, 6.2, 5.0, 5.1],
+    'Q': [2.8, 2.5, 2.4, 3.3, 2.2, 2.6],
+    'Å': [2.3, 2.2, 2.0, 2.2, 2.0, 2.0],
+};
+const trendDates = ['24. feb', '3. mar', '10. mar', '16. mar', '21. mar', '23. mar'];
+
+// ====== PARTY BARS ======
+const barsContainer = document.getElementById('partyBars');
+const maxPct = 25;
+parties.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'party-row';
+    const trend = partyTrends[p.id];
+    const latest = trend ? trend[trend.length - 1] : p.pct;
+    row.innerHTML = `
+        <div class="party-letter" style="background:${p.color}">${p.id}</div>
+        <div class="party-name">${p.name}</div>
+        <div class="party-bar-container">
+            <div class="party-bar-fill" style="width:${(latest/maxPct)*100}%; background:${p.color}; opacity:0.85;"></div>
+            <div class="threshold-line"></div>
+        </div>
+        <div class="party-pct" style="color:${p.color}">${latest.toFixed(1)}%</div>
+        <div class="party-mandater">${p.mandater} m.</div>
+    `;
+    row.addEventListener('click', () => openPartyModal(p.id));
+    barsContainer.appendChild(row);
+});
+
+// ====== LEADERS ======
+const leaderGrid = document.getElementById('leaderGrid');
+leaders.forEach(l => {
+    const card = document.createElement('div');
+    card.className = 'leader-card';
+    card.style.borderLeftColor = l.color;
+    card.innerHTML = `
+        <div class="leader-party" style="color:${l.color}">${l.party} (${l.letter})</div>
+        <div class="leader-name">${l.name}</div>
+        <div class="leader-role">${l.role}</div>
+    `;
+    leaderGrid.appendChild(card);
+});
+
+// ====== PARTI MODAL ======
+const modal = document.getElementById('partyModal');
+const modalClose = document.getElementById('modalClose');
+let modalChartInstance = null;
+
+function openPartyModal(partyId) {
+    const p = parties.find(x => x.id === partyId);
+    if (!p) return;
+    const l = leaders.find(x => x.letter === partyId);
+
+    document.getElementById('modalLetter').textContent = p.id;
+    document.getElementById('modalLetter').style.background = p.color;
+    document.getElementById('modalName').textContent = p.name;
+
+    const blocNames = { red: 'Rød Blok', blue: 'Blå Blok', center: 'Midten' };
+    document.getElementById('modalBloc').textContent = blocNames[p.bloc] || '';
+
+    const latestTrend = partyTrends[p.id];
+    const latestPct = latestTrend ? latestTrend[latestTrend.length - 1] : p.pct;
+    document.getElementById('modalPct').textContent = latestPct.toFixed(1) + '%';
+    document.getElementById('modalPct').style.color = p.color;
+    document.getElementById('modalMandater').textContent = p.mandater;
+    document.getElementById('modalMandater').style.color = p.color;
+
+    if (l) {
+        document.getElementById('modalLeaderName').textContent = l.name.split(' ').slice(-1)[0];
+        document.getElementById('modalLeaderName').style.color = p.color;
+        document.getElementById('modalLeaderRole').textContent = l.name;
+    }
+
+    document.getElementById('modalEpinion').textContent = p.epinion.toFixed(1) + '%';
+    document.getElementById('modalEpinion').style.color = p.color;
+    document.getElementById('modalEpinionBar').style.width = (p.epinion / 25 * 100) + '%';
+    document.getElementById('modalEpinionBar').style.background = p.color;
+
+    document.getElementById('modalVoxmeter').textContent = p.voxmeter.toFixed(1) + '%';
+    document.getElementById('modalVoxmeter').style.color = p.color;
+    document.getElementById('modalVoxmeterBar').style.width = (p.voxmeter / 25 * 100) + '%';
+    document.getElementById('modalVoxmeterBar').style.background = p.color;
+
+    // Chart
+    if (modalChartInstance) modalChartInstance.destroy();
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    modalChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trendDates,
+            datasets: [{
+                label: p.name,
+                data: partyTrends[p.id] || [],
+                borderColor: p.color,
+                backgroundColor: p.color + '18',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 5,
+                pointBackgroundColor: p.color,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                borderWidth: 3,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: Math.floor(Math.min(...(partyTrends[p.id] || [0])) - 1),
+                    max: Math.ceil(Math.max(...(partyTrends[p.id] || [0])) + 1),
+                    grid: { color: laGrid },
+                    ticks: { callback: v => v.toFixed(1) + '%' }
+                },
+                x: { grid: { color: laGrid } }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: { label: ctx => `${ctx.raw.toFixed(1)}%` }
+                }
+            }
+        }
+    });
+
+    modal.classList.add('active');
+}
+
+modalClose.addEventListener('click', () => modal.classList.remove('active'));
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.remove('active'); });
+
+// ====== CHARTS ======
+const laGrid = '#1e2640';
+
+Chart.defaults.color = '#8892a8';
+Chart.defaults.borderColor = laGrid;
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+// Mandatfordeling (Doughnut)
+const mandatChart = new Chart(document.getElementById('mandatChart'), {
+    type: 'doughnut',
+    data: {
+        labels: parties.map(p => `${p.id} – ${p.name}`),
+        datasets: [{
+            data: parties.map(p => p.mandater),
+            backgroundColor: parties.map(p => p.color),
+            borderWidth: 2,
+            borderColor: '#141a2e',
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '55%',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${ctx.label}: ${ctx.raw} mandater`
+                }
+            }
+        }
+    }
+});
+
+// Blokfordeling (Doughnut)
+const blocChart = new Chart(document.getElementById('blocChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Rød Blok', 'Blå Blok', 'Moderaterne'],
+        datasets: [{
+            data: [85, 79, 11],
+            backgroundColor: ['#e84060', '#4a90d9', '#8b5cf6'],
+            borderWidth: 3,
+            borderColor: '#141a2e',
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 16, usePointStyle: true, pointStyle: 'circle' }
+            },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${ctx.label}: ${ctx.raw} mandater`
+                }
+            }
+        }
+    },
+    plugins: [{
+        id: 'centerText',
+        afterDraw(chart) {
+            const { ctx, chartArea: { left, right, top, bottom } } = chart;
+            const cx = (left + right) / 2;
+            const cy = (top + bottom) / 2;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = "bold 24px 'DM Sans'";
+            ctx.fillStyle = '#fff';
+            ctx.fillText('175', cx, cy - 8);
+            ctx.font = "12px 'DM Sans'";
+            ctx.fillStyle = '#8892a8';
+            ctx.fillText('mandater', cx, cy + 14);
+            ctx.restore();
+        }
+    }]
+});
+
+// Sammenligning Epinion vs Voxmeter (Horizontal Bar)
+new Chart(document.getElementById('compareChart'), {
+    type: 'bar',
+    data: {
+        labels: parties.map(p => p.id),
+        datasets: [
+            {
+                label: 'Epinion/DR (21/3)',
+                data: parties.map(p => p.epinion),
+                backgroundColor: 'rgba(200, 16, 46, 0.7)',
+                borderRadius: 4,
+            },
+            {
+                label: 'Voxmeter (16/3)',
+                data: parties.map(p => p.voxmeter),
+                backgroundColor: 'rgba(74, 144, 217, 0.7)',
+                borderRadius: 4,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: {
+            x: {
+                beginAtZero: true,
+                max: 25,
+                grid: { color: laGrid },
+                ticks: { callback: v => v + '%' }
+            },
+            y: {
+                grid: { display: false },
+                ticks: { font: { weight: 'bold', size: 13 } }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 }
+            },
+            tooltip: {
+                callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}%` }
+            }
+        }
+    }
+});
+
+// Blok-trend (Line chart)
+const trendLabels = ['24. feb', '3. mar', '10. mar', '16. mar', '21. mar', '23. mar'];
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: trendLabels,
+        datasets: [
+            {
+                label: 'Rød Blok',
+                data: [46.2, 46.8, 47.5, 47.9, 48.0, 48.3],
+                borderColor: '#e84060',
+                backgroundColor: 'rgba(232, 64, 96, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#e84060',
+            },
+            {
+                label: 'Blå Blok',
+                data: [46.5, 46.0, 45.5, 45.2, 44.8, 44.6],
+                borderColor: '#4a90d9',
+                backgroundColor: 'rgba(74, 144, 217, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#4a90d9',
+            },
+            {
+                label: 'Moderaterne',
+                data: [7.3, 7.2, 7.0, 6.9, 7.2, 7.1],
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#8b5cf6',
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                min: 0,
+                max: 55,
+                grid: { color: laGrid },
+                ticks: { callback: v => v + '%' }
+            },
+            x: {
+                grid: { color: laGrid }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 }
+            }
+        }
+    }
+});
+
+// ====== LIVE DATA FRA DR's FIRESTORE API ======
+const DR_API = 'https://firestore.googleapis.com/v1/projects/drdk-portal-valhal-prod/databases/(default)/documents/';
+const POLL_INTERVAL = 30000; // 30 sekunder
+let liveActive = false;
+
+const redBloc = ['A', 'F', 'Ø', 'B', 'Å'];
+const blueBloc = ['V', 'I', 'C', 'Æ', 'O', 'Q'];
+
+function extractField(fields, key) {
+    if (!fields || !fields[key]) return null;
+    const val = fields[key];
+    if (val.stringValue !== undefined) return val.stringValue;
+    if (val.integerValue !== undefined) return Number(val.integerValue);
+    if (val.doubleValue !== undefined) return val.doubleValue;
+    if (val.booleanValue !== undefined) return val.booleanValue;
+    if (val.arrayValue) return val.arrayValue.values || [];
+    if (val.mapValue) return val.mapValue.fields;
+    return null;
+}
+
+function updateStatusText(text) {
+    document.getElementById('liveStatus').textContent = text;
+}
+
+async function fetchLiveData() {
+    try {
+        const res = await fetch(DR_API + 'FV2026-geography-results/land-dk');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        const fields = json.fields;
+
+        // Optællingsstatus
+        const countedPct = extractField(fields, 'CountedPct') || 0;
+        const turnoutPct = extractField(fields, 'TurnoutPct') || 0;
+        const resultType = extractField(fields, 'ResultType') || 'Setup';
+
+        document.getElementById('countedPct').textContent = countedPct.toFixed(1) + '%';
+        document.getElementById('countedBar').style.width = countedPct + '%';
+        document.getElementById('turnoutPct').textContent = turnoutPct.toFixed(1) + '%';
+
+        const typeLabels = { 'Setup': 'VENTER', 'Preliminary': 'FORELØBIG', 'Final': 'ENDELIG' };
+        const typeEl = document.getElementById('resultType');
+        typeEl.textContent = typeLabels[resultType] || resultType;
+        if (resultType === 'Final') {
+            typeEl.style.background = '#152a15';
+            typeEl.style.color = '#2dc84d';
+        } else if (resultType === 'Preliminary') {
+            typeEl.style.background = '#2a2515';
+            typeEl.style.color = '#ffd15c';
+        }
+
+        // Partiresultater
+        const partyResults = extractField(fields, 'PartyResults');
+        if (!partyResults || !Array.isArray(partyResults) || partyResults.length === 0) {
+            updateStatusText('Live OK · Optælling ikke startet · ' + new Date().toLocaleTimeString('da-DK'));
+            return;
+        }
+
+        let totalVotes = 0;
+        const liveParties = [];
+
+        partyResults.forEach(function(entry) {
+            const f = entry.mapValue ? entry.mapValue.fields : null;
+            if (!f) return;
+            const partyFields = f.Party ? (f.Party.mapValue ? f.Party.mapValue.fields : f) : f;
+            const letter = extractField(partyFields, 'Letter') || extractField(f, 'Letter');
+            const votes = extractField(f, 'Votes') || 0;
+            const seats = extractField(f, 'Seats') || 0;
+            const pct = extractField(f, 'VotesSharePct') || 0;
+            totalVotes += votes;
+            if (letter) liveParties.push({ letter: letter, votes: votes, seats: seats, pct: pct });
+        });
+
+        if (totalVotes === 0) {
+            updateStatusText('Live OK · Ingen stemmer endnu · ' + new Date().toLocaleTimeString('da-DK'));
+            return;
+        }
+
+        // Opdater partidata
+        liveParties.forEach(function(lp) {
+            const party = parties.find(function(p) { return p.id === lp.letter; });
+            if (!party) return;
+            party.livePct = lp.pct;
+            party.liveSeats = lp.seats;
+            party.liveVotes = lp.votes;
+        });
+
+        // Opdater parti-søjler
+        const rows = document.querySelectorAll('#partyBars .party-row');
+        parties.forEach(function(p, i) {
+            if (p.livePct === undefined || !rows[i]) return;
+            const bar = rows[i].querySelector('.party-bar-fill');
+            const pctEl = rows[i].querySelector('.party-pct');
+            const mandEl = rows[i].querySelector('.party-mandater');
+            bar.style.width = (p.livePct / maxPct * 100) + '%';
+            pctEl.textContent = p.livePct.toFixed(1) + '%';
+            if (p.liveSeats !== undefined) mandEl.textContent = p.liveSeats + ' m.';
+        });
+
+        // Opdater mandatchart
+        mandatChart.data.datasets[0].data = parties.map(function(p) { return p.liveSeats !== undefined ? p.liveSeats : p.mandater; });
+        mandatChart.update('none');
+
+        // Opdater blokfordeling
+        var redSeats = 0, blueSeats = 0, mSeats = 0;
+        parties.forEach(function(p) {
+            var seats = p.liveSeats !== undefined ? p.liveSeats : p.mandater;
+            if (redBloc.indexOf(p.id) !== -1) redSeats += seats;
+            else if (blueBloc.indexOf(p.id) !== -1) blueSeats += seats;
+            else if (p.id === 'M') mSeats += seats;
+        });
+
+        blocChart.data.datasets[0].data = [redSeats, blueSeats, mSeats];
+        blocChart.update('none');
+
+        // Opdater blok-overblik
+        var redPct = 0, bluePct = 0, mPct = 0;
+        parties.forEach(function(p) {
+            var pct = p.livePct !== undefined ? p.livePct : 0;
+            if (redBloc.indexOf(p.id) !== -1) redPct += pct;
+            else if (blueBloc.indexOf(p.id) !== -1) bluePct += pct;
+            else if (p.id === 'M') mPct += pct;
+        });
+
+        var blocCards = document.querySelectorAll('.bloc-card');
+        if (blocCards[0]) {
+            blocCards[0].querySelector('.bloc-pct').textContent = redPct.toFixed(1).replace('.', ',') + '%';
+            blocCards[0].querySelector('.bloc-mandater').textContent = redSeats + ' mandater';
+            blocCards[0].querySelector('.bloc-bar-fill').style.width = redPct + '%';
+        }
+        if (blocCards[1]) {
+            blocCards[1].querySelector('.bloc-pct').textContent = mPct.toFixed(1).replace('.', ',') + '%';
+            blocCards[1].querySelector('.bloc-mandater').textContent = mSeats + ' mandater';
+        }
+        if (blocCards[2]) {
+            blocCards[2].querySelector('.bloc-pct').textContent = bluePct.toFixed(1).replace('.', ',') + '%';
+            blocCards[2].querySelector('.bloc-mandater').textContent = blueSeats + ' mandater';
+            blocCards[2].querySelector('.bloc-bar-fill').style.width = bluePct + '%';
+        }
+
+        liveActive = true;
+        updateStatusText('LIVE · Opdateret ' + new Date().toLocaleTimeString('da-DK'));
+
+    } catch (err) {
+        console.error('Live fetch fejl:', err);
+        updateStatusText('Fejl: ' + err.message + ' · ' + new Date().toLocaleTimeString('da-DK'));
+    }
+}
+
+// Start polling
+fetchLiveData();
+setInterval(fetchLiveData, POLL_INTERVAL);
+</script>
+
+</body>
+</html>
