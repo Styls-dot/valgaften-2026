@@ -121,6 +121,27 @@
         .own-row .o-diff22.up{color:#2dc84d}.own-row .o-diff22.down{color:#e84060}.own-row .o-diff22.flat{color:#5a6280}
         .own-row .o-seats{width:24px;text-align:right;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
 
+        /* Model insight */
+        .sk-swing{background:#0a0e14;border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:4px;font-size:10px}
+        .sk-swing .ss-name{color:#8892a8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .sk-swing .ss-pct{color:#5a6280;width:32px;text-align:right;font-variant-numeric:tabular-nums}
+        .sk-swing .ss-top{font-weight:700;width:55px;text-align:right}
+        .sk-swing .ss-top.up{color:#2dc84d}.sk-swing .ss-top.down{color:#e84060}
+        .sk-swing.no-data{opacity:0.4}
+
+        .big-move{display:inline-flex;align-items:center;gap:4px;background:#0a0e14;border-radius:6px;padding:5px 10px;margin:0 4px 4px 0;font-size:11px}
+        .big-move .bm-let{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;color:#fff}
+        .big-move .bm-val{font-weight:700}
+        .big-move .bm-val.up{color:#2dc84d}.big-move .bm-val.down{color:#e84060}
+
+        .bloc-prog{background:#0a0e14;border-radius:8px;padding:10px 14px;flex:1;min-width:120px;text-align:center}
+        .bloc-prog .bp-label{font-size:9px;color:#5a6280;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+        .bloc-prog .bp-seats{font-size:24px;font-weight:800}
+        .bloc-prog .bp-pct{font-size:10px;color:#5a6280}
+        .bloc-prog.r .bp-seats{color:#e84060}
+        .bloc-prog.m .bp-seats{color:#a78bfa}
+        .bloc-prog.b .bp-seats{color:#4a90d9}
+
         /* Swing bars */
         .sw-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
         .sw-let{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff;flex-shrink:0}
@@ -178,7 +199,27 @@
             <div style="background:#0a0e14;border-radius:6px;padding:6px 10px;font-size:10px"><span style="color:#5a6280">Stemmer</span> <b style="color:#fff" id="mVotes">0</b></div>
         </div>
         <div id="ownTable"></div>
-        <div style="font-size:9px;color:#3a4a5a;margin-top:8px">Model: FV2022-data per storkreds (DST) → beregn swing i optalte områder → projicér uoptalte med vælkervægtet gennemsnitsswing → d'Hondt (175 md, 2% spærregrænse). Storkreds med mange vælgere og høj optælling vægter mest.</div>
+        <div style="font-size:9px;color:#3a4a5a;margin-top:8px">Model: FV2022-data per storkreds (DST) → beregn swing i optalte områder → projicér uoptalte med vælkervægtet gennemsnitsswing → d'Hondt (175 md, 2% spærregrænse).</div>
+    </div>
+
+    <!-- MODEL INDSIGT -->
+    <div class="card" style="margin-bottom:12px;border-color:#1a2040">
+        <h3 style="color:#a78bfa">Sådan forudsiger modellen <span class="badge" style="background:#1a1530;color:#a78bfa" id="modelTick">opdateres...</span></h3>
+
+        <!-- Swing per storkreds -->
+        <div style="font-size:10px;color:#8892a8;margin-bottom:6px;font-weight:600">Swing per storkreds vs FV2022</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:14px" id="swingGrid"></div>
+
+        <!-- Hvad driver prognosen -->
+        <div style="font-size:10px;color:#8892a8;margin-bottom:6px;font-weight:600">Største bevægelser vs FV2022</div>
+        <div id="bigMoves" style="margin-bottom:14px"></div>
+
+        <!-- Prognose-historik -->
+        <div style="font-size:10px;color:#8892a8;margin-bottom:6px;font-weight:600">Prognose-udvikling</div>
+        <div style="height:160px;position:relative"><canvas id="progHistChart"></canvas></div>
+
+        <!-- Blok-prognose -->
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap" id="blocPrognose"></div>
     </div>
 
     <div class="grid">
@@ -428,6 +469,88 @@ function buildPrognosis(countedPct,ownVotes,ownTotal,ownCount){
     return prognosis;
 }
 
+// Build swing grid
+var swGrid=document.getElementById('swingGrid');
+for(var i=1;i<=10;i++){
+    var d=document.createElement('div');d.className='sk-swing no-data';d.id='ssw-'+i;
+    d.innerHTML='<div class="ss-name">'+skNames[i-1]+'</div><div class="ss-pct">–</div><div class="ss-top">–</div>';
+    swGrid.appendChild(d);
+}
+
+// Prognose historik
+var progHistory=[];// [{time,parties:{A:pct,...}}]
+var progHistChart=new Chart(document.getElementById('progHistChart'),{
+    type:'line',
+    data:{labels:[],datasets:[]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:30,grid:{color:'#141c2a'},ticks:{callback:function(v){return v+'%'},font:{size:9}}},x:{grid:{color:'#141c2a'},ticks:{font:{size:8},maxTicksLimit:10}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.raw.toFixed(1)+'%'}}}},elements:{point:{radius:0},line:{borderWidth:2,tension:0.3}}}
+});
+
+// Bloc prognose boxes
+var bpEl=document.getElementById('blocPrognose');
+bpEl.innerHTML='<div class="bloc-prog r"><div class="bp-label">Rød blok</div><div class="bp-seats" id="bpR">–</div><div class="bp-pct" id="bpRp"></div></div><div class="bloc-prog m"><div class="bp-label">Moderaterne</div><div class="bp-seats" id="bpM">–</div><div class="bp-pct" id="bpMp"></div></div><div class="bloc-prog b"><div class="bp-label">Blå blok</div><div class="bp-seats" id="bpB">–</div><div class="bp-pct" id="bpBp"></div></div>';
+
+function updateModelInsight(prog){
+    document.getElementById('modelTick').textContent=ts();
+
+    // 1) Swing per storkreds
+    for(var si=1;si<=10;si++){
+        var el=document.getElementById('ssw-'+si);if(!el)continue;
+        var sk=skLiveData[si];
+        if(sk&&sk.counted>0&&sk.partyPcts){
+            el.classList.remove('no-data');
+            el.querySelector('.ss-pct').textContent=sk.counted.toFixed(0)+'%';
+            // Find biggest swing party
+            var bestSwing='';var bestVal=0;
+            parties.forEach(function(p){
+                var now=sk.partyPcts[p.id]||0;
+                var was=fv22sk[si][p.id]||0;
+                var sw=now-was;
+                if(Math.abs(sw)>Math.abs(bestVal)){bestVal=sw;bestSwing=p.id}
+            });
+            var topEl=el.querySelector('.ss-top');
+            topEl.textContent=bestSwing+(bestVal>0?' +':' ')+bestVal.toFixed(1);
+            topEl.className='ss-top '+(bestVal>0?'up':'down');
+        }
+    }
+
+    // 2) Biggest moves (fra prognosen vs FV2022)
+    var moves=prog.filter(function(p){return Math.abs(p.d22)>=0.5}).sort(function(a,b){return Math.abs(b.d22)-Math.abs(a.d22)}).slice(0,8);
+    var bmEl=document.getElementById('bigMoves');
+    bmEl.innerHTML='';
+    moves.forEach(function(m){
+        var d=document.createElement('span');d.className='big-move';
+        d.innerHTML='<div class="bm-let" style="background:'+m.color+'">'+m.id+'</div><span class="bm-val '+(m.d22>0?'up':'down')+'">'+(m.d22>0?'+':'')+m.d22.toFixed(1)+'</span>';
+        bmEl.appendChild(d);
+    });
+
+    // 3) Historik
+    var now={};prog.forEach(function(p){now[p.id]=p.pct});
+    progHistory.push({time:ts().substring(0,5),data:now});
+    if(progHistory.length>60)progHistory.shift();
+
+    // Opdater chart (top 6 partier)
+    var top6=prog.slice(0,6);
+    progHistChart.data.labels=progHistory.map(function(h){return h.time});
+    progHistChart.data.datasets=top6.map(function(p){
+        return{label:p.id,data:progHistory.map(function(h){return h.data[p.id]||0}),borderColor:p.color,backgroundColor:'transparent'};
+    });
+    progHistChart.update('none');
+
+    // 4) Bloc prognose
+    var rS=0,rP=0,bS=0,bP=0,mS=0,mP=0;
+    prog.forEach(function(p){
+        if(redB.indexOf(p.id)!==-1){rS+=p.seats;rP+=p.pct}
+        else if(blueB.indexOf(p.id)!==-1){bS+=p.seats;bP+=p.pct}
+        if(p.id==='M'){mS=p.seats;mP=p.pct}
+    });
+    document.getElementById('bpR').textContent=rS+' md';
+    document.getElementById('bpB').textContent=bS+' md';
+    document.getElementById('bpM').textContent=mS+' md';
+    document.getElementById('bpRp').textContent=rP.toFixed(1)+'% · '+(rS+mS>=90?'flertal med M':'intet flertal med M');
+    document.getElementById('bpBp').textContent=bP.toFixed(1)+'% · '+(bS+mS>=90?'flertal med M':'intet flertal med M');
+    document.getElementById('bpMp').textContent=mP.toFixed(1)+'%';
+}
+
 addFeed('Dashboard startet – henter data hvert 10. sekund');
 
 // ====== MAIN FETCH ======
@@ -556,11 +679,12 @@ async function fetchAll(){
             ownT.appendChild(row);
         });
 
-        // Opdater swing fra prognose
+        // Opdater swing + model insight
         parties.forEach(function(p){
             var pr2=prog.find(function(o){return o.id===p.id});
             p.ownPct=pr2?pr2.pct:0;
         });
+        updateModelInsight(prog);
 
         // 4) Update party table (sorted)
         var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
