@@ -376,80 +376,54 @@ function buildPrognosis(countedPct,ownVotes,ownTotal,ownCount){
     document.getElementById('mVSCount').textContent=ownCount;
     document.getElementById('mVotes').textContent=fmt(ownTotal);
 
-    // TRIN 1: Beregn swing per storkreds der har data
-    // Swing = forskel mellem 2026-tal og FV2022-tal for den storkreds
-    var skSwings={};  // {skId: {partyId: swing}}
-    var swingWeightTotal=0;
-    var avgSwing={};
-    parties.forEach(function(p){avgSwing[p.id]=0});
+    // Simpel, pålidelig model:
+    // Vægtet gennemsnit af 3 datakilder:
+    //   1) Optalte stemmer fra valgsteder (vægtes med optalt%)
+    //   2) DRs nationale prognose (vægtes omvendt)
+    //   3) Exit poll (kun bruges tidligt, fader ud)
 
-    for(var si=1;si<=10;si++){
-        var sk=skLiveData[si];
-        if(!sk||!sk.partyPcts||sk.counted<1)continue; // ingen data endnu
-        skSwings[si]={};
-        var weight=sk.counted/100*fv22sk[si].voters; // mere optalt + flere vælgere = mere vægt
-        swingWeightTotal+=weight;
-        parties.forEach(function(p){
-            var pct2026=sk.partyPcts[p.id]||0;
-            var pct2022=fv22sk[si][p.id]||0;
-            var swing=pct2026-pct2022;
-            skSwings[si][p.id]=swing;
-            avgSwing[p.id]+=swing*weight;
-        });
-    }
-    // Normaliser gennemsnitsswing
-    if(swingWeightTotal>0){
-        parties.forEach(function(p){avgSwing[p.id]/=swingWeightTotal});
-    }
+    var realWeight=Math.min(countedPct/100,0.90);  // max 90% fra optalte
+    var drWeight=Math.max(0.10,(1-realWeight)*0.7); // DR som supplement
+    var exitWeight=Math.max(0,(1-realWeight)*0.3);  // Exit fader ud
 
-    // TRIN 2: For HVER storkreds, projicér 2026-resultat
-    // Optalt storkreds: brug dens egne data vægtet med optalt%
-    // Uoptalt: brug FV2022 + gennemsnitsswing
-    var projectedVotes={};
-    parties.forEach(function(p){projectedVotes[p.id]=0});
-    var projectedTotal=0;
+    // Normaliser vægte
+    var wSum=realWeight+drWeight+exitWeight;
+    realWeight/=wSum;drWeight/=wSum;exitWeight/=wSum;
 
-    for(var si=1;si<=10;si++){
-        var voters=fv22sk[si].voters;
-        var sk=skLiveData[si];
-        var skCounted=(sk&&sk.counted)||0;
+    document.getElementById('mWeightReal').textContent=(realWeight*100).toFixed(0)+'%';
+    document.getElementById('mWeightExit').textContent=((drWeight+exitWeight)*100).toFixed(0)+'%';
 
-        parties.forEach(function(p){
-            var fv22pct=fv22sk[si][p.id]||0;
-
-            if(skSwings[si]&&skCounted>=5){
-                // Denne storkreds har data: blend egne tal med FV22+swing
-                var realPct=sk.partyPcts[p.id]||0;
-                var swingProjected=fv22pct+avgSwing[p.id];
-                // Vægt: mere optalt = mere tro på egne tal
-                var localWeight=Math.min(skCounted/100,0.95);
-                var blended=realPct*localWeight+swingProjected*(1-localWeight);
-                projectedVotes[p.id]+=blended/100*voters;
-            } else if(swingWeightTotal>0){
-                // Ingen data: brug FV2022 + gennemsnitsswing fra andre storkredse
-                var projected=fv22pct+avgSwing[p.id];
-                projectedVotes[p.id]+=Math.max(projected,0)/100*voters;
-            } else {
-                // Intet optalt overhovedet: brug exit poll
-                var ep=exitPoll[p.id]||0;
-                projectedVotes[p.id]+=ep/100*voters;
-            }
-        });
-        projectedTotal+=voters;
-    }
-
-    // TRIN 3: Omregn til procenter
     var prognosis=[];
-    var sumVotes=0;
-    parties.forEach(function(p){sumVotes+=projectedVotes[p.id]});
-
     parties.forEach(function(p){
-        var pct=sumVotes>0?(projectedVotes[p.id]/sumVotes*100):0;
-        var d22=fv22[p.id]!==undefined?(pct-fv22[p.id]):0;
-        prognosis.push({id:p.id,name:p.name,color:p.color,pct:pct,votes:ownVotes[p.id]||0,d22:d22,drPct:p.pct});
+        // Optalte stemmer
+        var realPct=ownTotal>0?((ownVotes[p.id]||0)/ownTotal*100):0;
+        // DR prognose
+        var drPct=p.pct||0;
+        // Exit poll
+        var epPct=exitPoll[p.id]||0;
+
+        var progPct;
+        if(ownTotal>0&&realPct>0){
+            progPct=realPct*realWeight+drPct*drWeight+epPct*exitWeight;
+        } else if(drPct>0){
+            progPct=drPct*(drWeight+realWeight)/(drWeight+realWeight)+epPct*exitWeight/(drWeight+realWeight+exitWeight);
+            progPct=drPct*0.7+epPct*0.3; // fallback
+        } else {
+            progPct=epPct;
+        }
+
+        var d22=fv22[p.id]!==undefined?(progPct-fv22[p.id]):0;
+        prognosis.push({id:p.id,name:p.name,color:p.color,pct:progPct,votes:ownVotes[p.id]||0,d22:d22,drPct:drPct});
     });
 
-    // TRIN 4: d'Hondt mandatberegning (175 mandater, 2% spærregrænse)
+    // Normaliser så det summer til ~100
+    var totalPct=0;prognosis.forEach(function(p){totalPct+=p.pct});
+    if(totalPct>0&&Math.abs(totalPct-100)>0.5){
+        prognosis.forEach(function(p){p.pct=p.pct/totalPct*100});
+        prognosis.forEach(function(p){p.d22=fv22[p.id]!==undefined?(p.pct-fv22[p.id]):0});
+    }
+
+    // d'Hondt mandatberegning (175 mandater, 2% spærregrænse)
     var eligible=prognosis.filter(function(p){return p.pct>=2.0});
     var totalE=0;eligible.forEach(function(p){totalE+=p.pct});
     eligible.forEach(function(p){p.norm=p.pct/totalE*100});
@@ -460,11 +434,6 @@ function buildPrognosis(countedPct,ownVotes,ownTotal,ownCount){
         if(bestId)seats[bestId]++;
     }
     prognosis.forEach(function(p){p.seats=seats[p.id]||0});
-
-    // Vis model-info
-    var realW=swingWeightTotal>0?Math.min(countedPct*1.2,95):0;
-    document.getElementById('mWeightReal').textContent=realW.toFixed(0)+'%';
-    document.getElementById('mWeightExit').textContent=(100-realW).toFixed(0)+'%';
 
     prognosis.sort(function(a,b){return b.pct-a.pct});
     return prognosis;
