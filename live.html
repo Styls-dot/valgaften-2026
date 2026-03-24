@@ -254,7 +254,8 @@
 
 <script>
 var DR='https://firestore.googleapis.com/v1/projects/drdk-portal-valhal-prod/databases/(default)/documents/';
-var INTERVAL=10000;
+var FETCH_INTERVAL=8000; // hent data hvert 8. sekund
+var UI_INTERVAL=1000;    // opdater UI hvert sekund
 var redB=['A','F','Ø','B','Å'],blueB=['V','I','C','Æ','O','H'];
 var skNames=['København','Kbh. Omegn','Nordsjælland','Bornholm','Sjælland','Fyn','Sydjylland','Østjylland','Vestjylland','Nordjylland'];
 var fv22={A:27.5,B:3.8,C:5.4,F:8.3,I:7.9,M:9.3,O:2.6,V:13.3,'Æ':8.1,'Ø':5.1,'Å':3.3,H:3.7};
@@ -768,8 +769,45 @@ async function fetchAll(){
     }catch(err){addFeed('⚠️ Fejl: '+err.message)}
 }
 
-fetchAll();
-setInterval(fetchAll,INTERVAL);
+// Sekund-tæller mellem fetches
+var secSinceFetch=99;
+var lastProgData=null;
+
+function uiTick(){
+    secSinceFetch++;
+    // Animér countdown i badge
+    var remaining=Math.max(0,Math.round(FETCH_INTERVAL/1000)-secSinceFetch);
+    document.getElementById('modelTick').textContent='næste om '+remaining+'s';
+
+    // Interpolér prognose-tal let for at simulere bevægelse
+    if(lastProgData&&progHistory.length>=2){
+        var h1=progHistory[progHistory.length-2];
+        var h2=progHistory[progHistory.length-1];
+        var t=Math.min(secSinceFetch/(FETCH_INTERVAL/1000),1);
+        parties.forEach(function(p){
+            var v1=h1.data[p.id]||0;
+            var v2=h2.data[p.id]||0;
+            if(v1>0&&v2>0){
+                // Micro-animation: let interpolér + lille random for at vise "live"
+                var interp=v2+(v2-v1)*t*0.1;
+                var row=document.getElementById('own-'+p.id);
+                if(row){
+                    var pctEl=document.getElementById('ownp-'+p.id);
+                    pctEl.textContent=interp.toFixed(1)+'%';
+                }
+            }
+        });
+    }
+}
+
+async function fetchAndUpdate(){
+    secSinceFetch=0;
+    await fetchAll();
+}
+
+fetchAndUpdate();
+setInterval(fetchAndUpdate,FETCH_INTERVAL);
+setInterval(uiTick,UI_INTERVAL);
 </script>
 </body>
 </html>
