@@ -262,7 +262,7 @@
 <!-- RIGHT SIDEBAR -->
 <div class="right">
 
-    <div class="section-h">Mandatfordeling</div>
+    <div class="section-h">Optalte stemmer</div>
     <div class="chart-wrap">
         <div class="chart-box"><canvas id="seatChart"></canvas></div>
     </div>
@@ -354,7 +354,7 @@ var seatChart=new Chart(document.getElementById('seatChart'),{
     type:'doughnut',
     data:{labels:parties.map(function(p){return p.id}),datasets:[{data:parties.map(function(){return 0}),backgroundColor:parties.map(function(p){return p.color}),borderWidth:2,borderColor:'#0c1018'}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' mandater'}}}}},
-    plugins:[{id:'ct',afterDraw:function(ch){var ctx=ch.ctx,a=ch.chartArea,cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font="bold 22px 'DM Sans'";ctx.fillStyle='#fff';ctx.fillText('175',cx,cy-6);ctx.font="10px 'DM Sans'";ctx.fillStyle='#5a6280';ctx.fillText('mandater',cx,cy+12);ctx.restore()}}]
+    plugins:[{id:'ct',afterDraw:function(ch){var ctx=ch.ctx,a=ch.chartArea,cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';var total=0;parties.forEach(function(p){total+=p.votes});ctx.font="bold 18px 'DM Sans'";ctx.fillStyle='#fff';ctx.fillText(total>0?fmt(total):'–',cx,cy-6);ctx.font="10px 'DM Sans'";ctx.fillStyle='#5a6280';ctx.fillText(total>0?'stemmer':'venter',cx,cy+12);ctx.restore()}}]
 });
 
 // ====== FEED ======
@@ -593,9 +593,15 @@ async function fetchAll(){
                     // Just notify once
                 }
 
-                // Seat chart
-                seatChart.data.datasets[0].data=parties.map(function(p){return p.seats});
-                seatChart.update('none');
+                // Seat chart - kun partier med optalte stemmer
+                var countedParties=parties.filter(function(p){return p.votes>0});
+                if(countedParties.length>0){
+                    seatChart.data.labels=countedParties.map(function(p){return p.id});
+                    seatChart.data.datasets[0].data=countedParties.map(function(p){return p.votes});
+                    seatChart.data.datasets[0].backgroundColor=countedParties.map(function(p){return p.color});
+                    seatChart.options.plugins.tooltip.callbacks.label=function(c){return c.label+': '+fmt(c.raw)+' stemmer'};
+                    seatChart.update('none');
+                }
             }
         }
 
