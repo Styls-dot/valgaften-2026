@@ -623,6 +623,49 @@
             color: #fff; flex-shrink: 0; font-variant-numeric: tabular-nums;
         }
 
+        /* Resultat bars */
+        .result-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 7px;
+            gap: 8px;
+        }
+
+        .result-row .rr-letter {
+            width: 30px; height: 30px; border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0;
+        }
+
+        .result-row .rr-name {
+            width: 150px; font-size: 12px; font-weight: 500; flex-shrink: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .result-row .rr-bar {
+            flex: 1; height: 22px; background: #0d1222; border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .result-row .rr-bar-fill {
+            height: 100%; border-radius: 5px; transition: width 1.5s ease; min-width: 1px;
+        }
+
+        .result-row .rr-pct {
+            width: 48px; text-align: right; font-weight: 700; font-size: 14px;
+            flex-shrink: 0; font-variant-numeric: tabular-nums;
+        }
+
+        .result-row .rr-seats {
+            width: 50px; text-align: right; font-size: 12px; color: #8892a8;
+            flex-shrink: 0; font-variant-numeric: tabular-nums;
+        }
+
+        .result-row .rr-votes {
+            width: 80px; text-align: right; font-size: 11px; color: #5a6280;
+            flex-shrink: 0; font-variant-numeric: tabular-nums;
+        }
+
         /* Responsiv */
         @media (max-width: 1000px) {
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
@@ -689,26 +732,37 @@
         </div>
     </div>
 
+    <!-- FORELØBIGT RESULTAT -->
+    <div class="card" style="margin-bottom: 20px; border-color: #2a2040;" id="exitPollCard">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h3 style="margin-bottom:0;" id="resultHeader">Foreløbigt resultat</h3>
+            <div id="resultBadge" style="font-size:11px; font-weight:600; color:#a78bfa; background:#1a1530; padding:4px 10px; border-radius:6px;">EXIT POLL</div>
+        </div>
+        <div id="resultBars"></div>
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="font-size:11px; color:#5a6280;" id="resultSource">Kilde: DR Exit Poll · Opdateres automatisk</div>
+            <div style="font-size:11px; color:#5a6280;" id="resultTime"></div>
+        </div>
+    </div>
+
     <!-- STORKREDS OPTÆLLING -->
     <div class="card" style="margin-bottom: 20px;" id="storkredsCard">
         <h3>Optælling per storkreds</h3>
         <div id="storkredsGrid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #1e2640;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #1e2640; flex-wrap:wrap; gap:8px;">
             <div>
-                <span style="font-size:13px; color:#8892a8;">Totalt afgivne stemmer:</span>
+                <span style="font-size:13px; color:#8892a8;">Afgivne stemmer:</span>
                 <span id="totalVotesDisplay" style="font-size:20px; font-weight:700; color:#fff; margin-left:8px; font-variant-numeric:tabular-nums;">0</span>
             </div>
             <div>
-                <span style="font-size:13px; color:#8892a8;">Gyldige stemmer:</span>
+                <span style="font-size:13px; color:#8892a8;">Gyldige:</span>
                 <span id="validVotesDisplay" style="font-size:20px; font-weight:700; color:#fff; margin-left:8px; font-variant-numeric:tabular-nums;">0</span>
             </div>
+            <div>
+                <span style="font-size:13px; color:#8892a8;">Valgsteder optalt:</span>
+                <span id="pollingStationsDisplay" style="font-size:20px; font-weight:700; color:#fff; margin-left:8px; font-variant-numeric:tabular-nums;">0 / ?</span>
+            </div>
         </div>
-    </div>
-
-    <!-- STEMMER PER PARTI -->
-    <div class="card" style="margin-bottom: 20px;" id="votesCard">
-        <h3>Afgivne stemmer per parti</h3>
-        <div id="votesBars"></div>
     </div>
 
     <!-- BLOK-OVERBLIK -->
@@ -1454,6 +1508,38 @@ async function fetchLiveData() {
     }
 }
 
+// ====== FORELØBIGT RESULTAT ======
+var resultBars = document.getElementById('resultBars');
+parties.forEach(function(p) {
+    var row = document.createElement('div');
+    row.className = 'result-row';
+    row.id = 'rr-' + p.id;
+    row.innerHTML =
+        '<div class="rr-letter" style="background:' + p.color + '">' + p.id + '</div>' +
+        '<div class="rr-name">' + p.name + '</div>' +
+        '<div class="rr-bar"><div class="rr-bar-fill" style="width:0%; background:' + p.color + '; opacity:0.85;"></div></div>' +
+        '<div class="rr-pct" style="color:' + p.color + '">–</div>' +
+        '<div class="rr-seats">–</div>' +
+        '<div class="rr-votes"></div>';
+    resultBars.appendChild(row);
+});
+
+function updateResultBars() {
+    var resultType = document.getElementById('resultBadge').textContent;
+    parties.forEach(function(p) {
+        var row = document.getElementById('rr-' + p.id);
+        if (!row) return;
+        var pct = p.livePct !== undefined ? p.livePct : 0;
+        var seats = p.liveSeats !== undefined ? p.liveSeats : 0;
+        var votes = p.liveVotes || 0;
+        row.querySelector('.rr-bar-fill').style.width = (pct / 25 * 100) + '%';
+        row.querySelector('.rr-pct').textContent = pct > 0 ? pct.toFixed(1) + '%' : '–';
+        row.querySelector('.rr-seats').textContent = seats > 0 ? seats + ' md.' : '–';
+        row.querySelector('.rr-votes').textContent = votes > 0 ? votes.toLocaleString('da-DK') + ' st.' : '';
+    });
+    document.getElementById('resultTime').textContent = 'Opdateret ' + new Date().toLocaleTimeString('da-DK');
+}
+
 // ====== STORKREDS OPTÆLLING ======
 const storkredsNames = [
     'København', 'Kbh. Omegn', 'Nordsjælland', 'Bornholm', 'Sjælland',
@@ -1492,6 +1578,10 @@ async function fetchStorkredsData() {
     try {
         var totalReceived = 0;
         var totalValid = 0;
+        var totalPollingDone = 0;
+        var totalPollingAll = 0;
+        var anyPreliminary = false;
+        var anyFinal = false;
 
         for (var i = 1; i <= 10; i++) {
             var res = await fetch(DR_API + 'FV2026-geography-results/storkreds-' + i);
@@ -1504,13 +1594,32 @@ async function fetchStorkredsData() {
             var valid = extractField(f, 'TotalValidReceivedVotes') || 0;
             var rType = extractField(f, 'ResultType') || 'Setup';
 
+            // Tæl valgsteder fra NumberOfSubGeographies og CountedSubGeographies
+            var subTotal = extractField(f, 'NumberOfSubGeographies') || 0;
+            var subCounted = extractField(f, 'CountedSubGeographies') || 0;
+            // Alternativt prøv andre feltnavne
+            if (subTotal === 0) subTotal = extractField(f, 'SubGeographiesTotal') || 0;
+            if (subCounted === 0) subCounted = extractField(f, 'SubGeographiesCounted') || 0;
+
             totalReceived += received;
             totalValid += valid;
+            totalPollingAll += subTotal;
+            totalPollingDone += subCounted;
+
+            if (rType === 'Preliminary') anyPreliminary = true;
+            if (rType === 'Final') anyFinal = true;
 
             var el = document.getElementById('sk-' + i);
             if (el) {
                 el.querySelector('.sk-bar-fill').style.width = counted + '%';
                 el.querySelector('.sk-pct').textContent = counted.toFixed(1) + '%';
+
+                // Vis valgsteder i storkreds
+                var nameEl = el.querySelector('.sk-name');
+                if (subTotal > 0) {
+                    nameEl.textContent = storkredsNames[i-1] + ' (' + subCounted + '/' + subTotal + ')';
+                }
+
                 var statusEl = el.querySelector('.sk-status');
                 if (rType === 'Final') {
                     statusEl.textContent = 'Færdig';
@@ -1527,6 +1636,26 @@ async function fetchStorkredsData() {
 
         document.getElementById('totalVotesDisplay').textContent = totalReceived.toLocaleString('da-DK');
         document.getElementById('validVotesDisplay').textContent = totalValid.toLocaleString('da-DK');
+
+        if (totalPollingAll > 0) {
+            document.getElementById('pollingStationsDisplay').textContent = totalPollingDone + ' / ' + totalPollingAll;
+        }
+
+        // Opdater resultat-badge
+        var badge = document.getElementById('resultBadge');
+        var header = document.getElementById('resultHeader');
+        if (anyFinal) {
+            badge.textContent = 'ENDELIG';
+            badge.style.color = '#2dc84d';
+            badge.style.background = '#152a15';
+            header.textContent = 'Endeligt resultat';
+        } else if (anyPreliminary || totalReceived > 0) {
+            badge.textContent = 'FORELØBIG';
+            badge.style.color = '#ffd15c';
+            badge.style.background = '#2a2515';
+            header.textContent = 'Foreløbigt resultat';
+            document.getElementById('resultSource').textContent = 'Kilde: DR optælling · ' + totalPollingDone + ' valgsteder optalt';
+        }
 
     } catch (err) {
         console.error('Storkreds fetch fejl:', err);
@@ -1553,6 +1682,7 @@ function updateVotesBars() {
 var origFetch = fetchLiveData;
 fetchLiveData = async function() {
     await origFetch();
+    updateResultBars();
     updateVotesBars();
     await fetchStorkredsData();
 };
