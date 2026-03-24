@@ -108,7 +108,19 @@
         @keyframes popOut{to{opacity:0;transform:translateX(40px)}}
         @keyframes shrink{0%{width:100%}100%{width:0}}
 
-        @media(max-width:600px){.p-bar,.p-votes{display:none}.sk-grid{grid-template-columns:1fr}.clock{font-size:16px}}
+        /* Swing bars */
+        .sw-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+        .sw-let{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff;flex-shrink:0}
+        .sw-name{width:50px;font-size:10px;color:#8892a8;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .sw-track{flex:1;height:16px;position:relative;display:flex;align-items:center}
+        .sw-center{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#2a3040}
+        .sw-fill{position:absolute;height:12px;border-radius:3px;transition:width 1.5s,left 1.5s;top:2px}
+        .sw-fill.pos{background:#2dc84d}
+        .sw-fill.neg{background:#e84060}
+        .sw-val{width:45px;text-align:right;font-size:11px;font-weight:700;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .sw-val.pos{color:#2dc84d}.sw-val.neg{color:#e84060}
+
+        @media(max-width:600px){.p-bar,.p-votes{display:none}.sk-grid{grid-template-columns:1fr}.clock{font-size:16px}.sw-name{display:none}}
     </style>
 </head>
 <body>
@@ -154,10 +166,11 @@
             <div class="sk-grid" id="skGrid"></div>
         </div>
 
-        <!-- Stemmefordeling -->
-        <div class="card">
-            <h3>Stemmefordeling (optalte)</h3>
-            <div class="chart-box"><canvas id="voteChart"></canvas></div>
+        <!-- Swing vs FV2022 -->
+        <div class="card" id="swingCard">
+            <h3>Swing vs FV2022 <span class="badge badge-live" id="swingBadge" style="display:none">fra optalte valgsteder</span></h3>
+            <div id="swingBars"></div>
+            <div style="font-size:9px;color:#3a4a5a;margin-top:8px">Sammenlignet med FV2022 landsresultat. Baseret på optalte valgsteder.</div>
         </div>
     </div>
 
@@ -226,6 +239,37 @@ function addFeed(txt,brk){feedItems.unshift({t:txt,time:ts(),b:!!brk});if(feedIt
 // Popup
 function showPopup(title,detail){var c=document.getElementById('popups');var el=document.createElement('div');el.className='popup';el.innerHTML='<div class="popup-tag">Valgsted optalt</div><div class="popup-title">'+title+'</div>'+(detail?'<div class="popup-detail">'+detail+'</div>':'')+'<div class="popup-bar"><div class="popup-bar-fill"></div></div>';c.appendChild(el);setTimeout(function(){el.classList.add('exit');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},300)},5000);var all=c.querySelectorAll('.popup:not(.exit)');if(all.length>5){all[0].classList.add('exit');setTimeout(function(){if(all[0].parentNode)all[0].parentNode.removeChild(all[0])},300)}}
 
+// Build swing bars
+var swB=document.getElementById('swingBars');
+parties.forEach(function(p){
+    var r=document.createElement('div');r.className='sw-row';r.id='sw-'+p.id;
+    r.innerHTML='<div class="sw-let" style="background:'+p.color+'">'+p.id+'</div><div class="sw-name">'+p.name+'</div><div class="sw-track"><div class="sw-center"></div><div class="sw-fill" id="swf-'+p.id+'"></div></div><div class="sw-val" id="swv-'+p.id+'">–</div>';
+    swB.appendChild(r);
+});
+
+function updateSwing(){
+    var maxDiff=10;
+    parties.forEach(function(p){
+        if(p.pct<=0||fv22[p.id]===undefined)return;
+        var diff=p.pct-fv22[p.id];
+        var fill=document.getElementById('swf-'+p.id);
+        var val=document.getElementById('swv-'+p.id);
+        var pctWidth=Math.min(Math.abs(diff)/maxDiff*50,48);
+        if(diff>=0){
+            fill.className='sw-fill pos';
+            fill.style.left='50%';
+            fill.style.width=pctWidth+'%';
+        }else{
+            fill.className='sw-fill neg';
+            fill.style.width=pctWidth+'%';
+            fill.style.left=(50-pctWidth)+'%';
+        }
+        val.textContent=(diff>0?'+':'')+diff.toFixed(1);
+        val.className='sw-val '+(diff>=0?'pos':'neg');
+    });
+    document.getElementById('swingBadge').style.display='inline';
+}
+
 addFeed('Dashboard startet – henter data hvert 10. sekund');
 
 // ====== MAIN FETCH ======
@@ -268,28 +312,49 @@ async function fetchAll(){
                     realTotal+=v;realCount++;
                     var pr=exf(ff,'PartyResults');
                     if(pr&&Array.isArray(pr)){pr.forEach(function(e){var ef=e.mapValue?e.mapValue.fields:null;if(!ef)return;var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;var let2=exf(pf,'Letter')||exf(ef,'Letter');var pv=exf(ef,'Votes')||0;if(let2&&pv>0)realVotes[let2]=(realVotes[let2]||0)+pv})}
-                    // New valgsted popup
+                    // New valgsted popup med FV22-sammenligning
                     var vsId=exf(ff,'Id')||exf(ff,'GeographyKey')||'';
                     if(vsId&&!knownVS[vsId]){
                         knownVS[vsId]=true;
                         var vsName=exf(ff,'FullGeographyName')||exf(ff,'GeographyName')||vsId;
                         var leading=exf(ff,'LeadingPartyLetter')||'';
-                        newVS.push({name:vsName,votes:v,leading:leading});
+                        // Beregn FV22-diff for dette valgsted
+                        var vsDiffs=[];
+                        if(pr&&Array.isArray(pr)){pr.forEach(function(e2){
+                            var ef2=e2.mapValue?e2.mapValue.fields:null;if(!ef2)return;
+                            var pf2=ef2.Party?(ef2.Party.mapValue?ef2.Party.mapValue.fields:ef2):ef2;
+                            var l2=exf(pf2,'Letter')||exf(ef2,'Letter');
+                            var pp=exf(ef2,'VotesSharePct')||0;
+                            if(l2&&pp>0&&fv22[l2]!==undefined){var dd=pp-fv22[l2];if(Math.abs(dd)>=1.5)vsDiffs.push({id:l2,diff:dd,pct:pp})}
+                        })}
+                        vsDiffs.sort(function(a,b){return Math.abs(b.diff)-Math.abs(a.diff)});
+                        newVS.push({name:vsName,votes:v,leading:leading,diffs:vsDiffs.slice(0,3)});
                     }
                 }
             })}
         }
 
-        // Show new valgsted popups (staggered)
+        // Show new valgsted popups (staggered) med FV22-sammenligning
         newVS.slice(0,8).forEach(function(vs,i){
             setTimeout(function(){
                 var pc=parties.find(function(p){return p.id===vs.leading});
                 var clr=pc?pc.color:'#5a6280';
-                showPopup(vs.name,'<span style="color:'+clr+'">'+vs.leading+'</span> størst · '+fmt(vs.votes)+' stemmer');
-                addFeed('🗳️ <b>'+vs.name+'</b> – '+vs.leading+' størst · '+fmt(vs.votes)+' st.');
+                var detail='<span style="color:'+clr+'">'+vs.leading+'</span> størst · '+fmt(vs.votes)+' stemmer';
+                if(vs.diffs&&vs.diffs.length>0){
+                    detail+='<br><span style="font-size:10px">vs FV22: ';
+                    detail+=vs.diffs.map(function(d){
+                        var c2=d.diff>0?'#2dc84d':'#e84060';
+                        return '<b>'+d.id+'</b> <span style="color:'+c2+'">'+(d.diff>0?'+':'')+d.diff.toFixed(1)+'</span>';
+                    }).join(' · ');
+                    detail+='</span>';
+                }
+                showPopup(vs.name,detail);
+                // Feed med kort FV22 swing
+                var feedDiff=vs.diffs&&vs.diffs.length>0?' ('+vs.diffs[0].id+(vs.diffs[0].diff>0?' +':' ')+vs.diffs[0].diff.toFixed(1)+' vs FV22)':'';
+                addFeed('🗳️ <b>'+vs.name+'</b> – '+vs.leading+' størst · '+fmt(vs.votes)+' st.'+feedDiff);
             },i*700);
         });
-        if(newVS.length>8)addFeed('🗳️ ...og '+( newVS.length-8)+' flere valgsteder optalt');
+        if(newVS.length>8)addFeed('🗳️ ...og '+(newVS.length-8)+' flere valgsteder optalt');
 
         document.getElementById('cDetail').textContent=realCount+' valgsteder · '+fmt(realTotal)+' stemmer';
 
@@ -332,6 +397,9 @@ async function fetchAll(){
             }
             pT.appendChild(row);
         });
+
+        // 4b) Update swing chart
+        updateSwing();
 
         // 5) Blocs
         var rS=0,rP=0,bS=0,bP=0,mS=0,mP=0;
