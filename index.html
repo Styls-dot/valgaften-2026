@@ -1225,7 +1225,7 @@ async function fetchLiveData() {
         document.getElementById('countedBar').style.width = countedPct + '%';
         document.getElementById('turnoutPct').textContent = turnoutPct.toFixed(1) + '%';
 
-        const typeLabels = { 'Setup': 'VENTER', 'Preliminary': 'FORELØBIG', 'Final': 'ENDELIG' };
+        const typeLabels = { 'Setup': 'VENTER', 'ExitPoll': 'EXIT POLL', 'Preliminary': 'FORELØBIG', 'Final': 'ENDELIG' };
         const typeEl = document.getElementById('resultType');
         typeEl.textContent = typeLabels[resultType] || resultType;
         if (resultType === 'Final') {
@@ -1234,6 +1234,9 @@ async function fetchLiveData() {
         } else if (resultType === 'Preliminary') {
             typeEl.style.background = '#2a2515';
             typeEl.style.color = '#ffd15c';
+        } else if (resultType === 'ExitPoll') {
+            typeEl.style.background = '#1a1530';
+            typeEl.style.color = '#a78bfa';
         }
 
         // Partiresultater
@@ -1258,8 +1261,10 @@ async function fetchLiveData() {
             if (letter) liveParties.push({ letter: letter, votes: votes, seats: seats, pct: pct });
         });
 
-        if (totalVotes === 0) {
-            updateStatusText('Live OK · Ingen stemmer endnu · ' + new Date().toLocaleTimeString('da-DK'));
+        // Tjek om der er data (enten stemmer ELLER exit poll med procenter/mandater)
+        var hasData = totalVotes > 0 || liveParties.some(function(lp) { return lp.pct > 0 || lp.seats > 0; });
+        if (!hasData) {
+            updateStatusText('Live OK · Ingen data endnu · ' + new Date().toLocaleTimeString('da-DK'));
             return;
         }
 
