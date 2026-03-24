@@ -108,6 +108,19 @@
         @keyframes popOut{to{opacity:0;transform:translateX(40px)}}
         @keyframes shrink{0%{width:100%}100%{width:0}}
 
+        /* Own prognose */
+        .own-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #0a0e14}
+        .own-row .o-let{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff;flex-shrink:0}
+        .own-row .o-name{width:70px;font-size:10px;font-weight:500;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .own-row .o-bar{flex:1;height:18px;background:#0a0e14;border-radius:3px;overflow:hidden;position:relative}
+        .own-row .o-bar-fill{height:100%;border-radius:3px;transition:width 1.5s}
+        .own-row .o-bar-dr{position:absolute;top:0;height:100%;border-right:2px dashed rgba(255,255,255,0.3);transition:width 1.5s}
+        .own-row .o-pct{width:44px;text-align:right;font-weight:700;font-size:13px;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .own-row .o-votes{width:60px;text-align:right;font-size:10px;color:#5a6280;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .own-row .o-diff22{width:38px;text-align:right;font-size:9px;font-weight:600;flex-shrink:0}
+        .own-row .o-diff22.up{color:#2dc84d}.own-row .o-diff22.down{color:#e84060}.own-row .o-diff22.flat{color:#5a6280}
+        .own-row .o-seats{width:24px;text-align:right;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+
         /* Swing bars */
         .sw-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
         .sw-let{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff;flex-shrink:0}
@@ -153,10 +166,22 @@
     </div>
     <div class="bloc-bar" style="margin:-4px 16px 12px"><div id="bbR" style="background:#e84060;width:33%"></div><div id="bbM" style="background:#a78bfa;width:8%"></div><div id="bbB" style="background:#4a90d9;width:33%"></div></div>
 
+    <!-- EGEN PROGNOSE -->
+    <div class="card" style="margin-bottom:12px;border-color:#1a3a1a">
+        <h3>Egen prognose – kun optalte stemmer <span class="badge badge-live" id="ownBadge">0 valgsteder</span></h3>
+        <div style="font-size:10px;color:#5a6280;margin-bottom:10px">Beregnet udelukkende fra faktisk optalte valgsteder. Ingen fremskrivning – rene tal.</div>
+        <div id="ownTable"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #141c2a;flex-wrap:wrap;gap:6px">
+            <div style="font-size:11px;color:#5a6280">Optalte stemmer: <b style="color:#fff" id="ownTotal">0</b></div>
+            <div style="font-size:11px;color:#5a6280">Valgsteder: <b style="color:#fff" id="ownCount">0</b> af ~1.400</div>
+            <div style="font-size:11px;color:#5a6280">vs DR prognose: <span id="ownVsDR" style="color:#ffd15c">–</span></div>
+        </div>
+    </div>
+
     <div class="grid">
-        <!-- Partier -->
+        <!-- DR Partier -->
         <div class="card" style="grid-row:span 2">
-            <h3>Partier <span class="badge badge-exit" id="dataBadge">EXIT POLL</span></h3>
+            <h3>DR prognose <span class="badge badge-exit" id="dataBadge">–</span></h3>
             <div id="pTable"></div>
         </div>
 
@@ -168,9 +193,9 @@
 
         <!-- Swing vs FV2022 -->
         <div class="card" id="swingCard">
-            <h3>Swing vs FV2022 <span class="badge badge-live" id="swingBadge" style="display:none">fra optalte valgsteder</span></h3>
+            <h3>Swing vs FV2022 <span class="badge badge-live" id="swingBadge" style="display:none">optalte stemmer</span></h3>
             <div id="swingBars"></div>
-            <div style="font-size:9px;color:#3a4a5a;margin-top:8px">Sammenlignet med FV2022 landsresultat. Baseret på optalte valgsteder.</div>
+            <div style="font-size:9px;color:#3a4a5a;margin-top:8px">Baseret på rene optalte stemmer sammenlignet med FV2022 landsresultat.</div>
         </div>
     </div>
 
@@ -250,8 +275,9 @@ parties.forEach(function(p){
 function updateSwing(){
     var maxDiff=10;
     parties.forEach(function(p){
-        if(p.pct<=0||fv22[p.id]===undefined)return;
-        var diff=p.pct-fv22[p.id];
+        var usePct=p.ownPct||p.pct;
+        if(usePct<=0||fv22[p.id]===undefined)return;
+        var diff=usePct-fv22[p.id];
         var fill=document.getElementById('swf-'+p.id);
         var val=document.getElementById('swv-'+p.id);
         var pctWidth=Math.min(Math.abs(diff)/maxDiff*50,48);
@@ -269,6 +295,17 @@ function updateSwing(){
     });
     document.getElementById('swingBadge').style.display='inline';
 }
+
+// Build own prognose table
+var ownT=document.getElementById('ownTable');
+parties.forEach(function(p){
+    var r=document.createElement('div');r.className='own-row';r.id='own-'+p.id;
+    r.innerHTML='<div class="o-let" style="background:'+p.color+'">'+p.id+'</div><div class="o-name">'+p.name+'</div><div class="o-bar"><div class="o-bar-dr" id="owndr-'+p.id+'"></div><div class="o-bar-fill" style="background:'+p.color+'" id="ownf-'+p.id+'"></div></div><div class="o-pct" style="color:'+p.color+'" id="ownp-'+p.id+'">–</div><div class="o-votes" id="ownv-'+p.id+'"></div><div class="o-diff22 flat" id="ownd-'+p.id+'">–</div><div class="o-seats" id="owns-'+p.id+'"></div>';
+    ownT.appendChild(r);
+});
+
+// Own prognose data
+var ownParties={};
 
 addFeed('Dashboard startet – henter data hvert 10. sekund');
 
@@ -324,10 +361,11 @@ async function fetchAll(){
 
         document.getElementById('cDetail').textContent=fmt(natVotes)+' stemmer · '+natType;
 
-        // 3) Hent nye valgsteder for popups
+        // 3) Hent optalte valgsteder for EGEN prognose + popups
         var newVS=[];
+        var ownVotes={};var ownTotal=0;var ownCount=0;
         try{
-            var r2=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'FV2026-geography-results'}],where:{fieldFilter:{field:{fieldPath:'TotalReceivedVotes'},op:'GREATER_THAN',value:{integerValue:'0'}}},limit:200,orderBy:[{field:{fieldPath:'TotalReceivedVotes'},direction:'DESCENDING'}]}})});
+            var r2=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'FV2026-geography-results'}],where:{fieldFilter:{field:{fieldPath:'TotalReceivedVotes'},op:'GREATER_THAN',value:{integerValue:'0'}}},limit:500,orderBy:[{field:{fieldPath:'TotalReceivedVotes'},direction:'DESCENDING'}]}})});
             if(r2.ok){
                 var rd=await r2.json();
                 if(Array.isArray(rd)){rd.forEach(function(item){
@@ -335,6 +373,12 @@ async function fetchAll(){
                     var ff=item.document.fields;
                     var gt=exf(ff,'GeographyType')||'';
                     if(gt!=='VotingArea')return;
+                    var vv=exf(ff,'TotalReceivedVotes')||0;
+                    if(vv>0){
+                        ownTotal+=vv;ownCount++;
+                        var pr3=exf(ff,'PartyResults');
+                        if(pr3&&Array.isArray(pr3)){pr3.forEach(function(e3){var ef3=e3.mapValue?e3.mapValue.fields:null;if(!ef3)return;var pf3=ef3.Party?(ef3.Party.mapValue?ef3.Party.mapValue.fields:ef3):ef3;var l3=exf(pf3,'Letter')||exf(ef3,'Letter');var pv3=exf(ef3,'Votes')||0;if(l3&&pv3>0)ownVotes[l3]=(ownVotes[l3]||0)+pv3})}
+                    }
                     var vsId=exf(ff,'Id')||exf(ff,'GeographyKey')||'';
                     if(!vsId||knownVS[vsId])return;
                     knownVS[vsId]=true;
@@ -372,6 +416,38 @@ async function fetchAll(){
             },i*800);
         });
         if(newVS.length>6)addFeed('🗳️ ...og '+(newVS.length-6)+' flere valgsteder optalt');
+
+        // 3b) Opdater EGEN prognose fra rene optalte stemmer
+        if(ownTotal>0){
+            document.getElementById('ownBadge').textContent=ownCount+' valgsteder · '+fmt(ownTotal)+' stemmer';
+            document.getElementById('ownTotal').textContent=fmt(ownTotal);
+            document.getElementById('ownCount').textContent=ownCount;
+            // Beregn egne procenter og estimer mandater (simpel d'Hondt approx)
+            var ownSorted=parties.slice().map(function(p){
+                var v=ownVotes[p.id]||0;
+                var pct=ownTotal>0?(v/ownTotal*100):0;
+                var d22=fv22[p.id]!==undefined?(pct-fv22[p.id]):0;
+                var estSeats=pct>=2?Math.round(pct/100*175):0;
+                return{id:p.id,name:p.name,color:p.color,votes:v,pct:pct,d22:d22,seats:estSeats,drPct:p.pct};
+            }).sort(function(a,b){return b.pct-a.pct});
+            // Vis forskel til DR
+            var bigDiffs=ownSorted.filter(function(o){return Math.abs(o.pct-o.drPct)>=0.5&&o.pct>0}).map(function(o){var d=o.pct-o.drPct;return o.id+' '+(d>0?'+':'')+d.toFixed(1)});
+            document.getElementById('ownVsDR').innerHTML=bigDiffs.length>0?bigDiffs.join(' · '):'< 0,5 forskel';
+            // Opdater tabel
+            ownSorted.forEach(function(o){
+                var row=document.getElementById('own-'+o.id);if(!row)return;
+                document.getElementById('ownf-'+o.id).style.width=(o.pct/30*100)+'%';
+                document.getElementById('owndr-'+o.id).style.width=(o.drPct/30*100)+'%';
+                document.getElementById('ownp-'+o.id).textContent=o.pct>0?o.pct.toFixed(1)+'%':'–';
+                document.getElementById('ownv-'+o.id).textContent=o.votes>0?fmt(o.votes):'';
+                var d22el=document.getElementById('ownd-'+o.id);
+                if(o.pct>0){d22el.textContent=(o.d22>0?'+':'')+o.d22.toFixed(1);d22el.className='o-diff22 '+(o.d22>0.5?'up':(o.d22<-0.5?'down':'flat'))}
+                document.getElementById('owns-'+o.id).textContent=o.seats>0?o.seats:'';
+                ownT.appendChild(row);
+            });
+            // Opdater swing fra egne tal
+            parties.forEach(function(p){var ov=ownVotes[p.id]||0;p.ownPct=ownTotal>0?(ov/ownTotal*100):0});
+        }
 
         // 4) Update party table (sorted)
         var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
