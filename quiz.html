@@ -20,47 +20,71 @@
         .header {
             background: linear-gradient(135deg, #101d2f 0%, #1a2744 100%);
             border-bottom: 3px solid #c8102e;
-            padding: 20px 40px;
+            padding: 16px 40px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
-        .header h1 {
-            font-size: 26px;
-            font-weight: 800;
-            color: #fff;
-        }
-
+        .header h1 { font-size: 22px; font-weight: 800; color: #fff; }
         .header h1 span { color: #c8102e; }
 
-        .scoreboard {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* ====== PLAYER SCOREBOARD ====== */
+        .players {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
         }
 
-        .score-label {
-            font-size: 13px;
-            color: #8892a8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .player-card {
+            background: #141a2e;
+            border: 2px solid #1e2640;
+            border-radius: 14px;
+            padding: 16px 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
         }
 
-        .score-value {
-            font-size: 32px;
-            font-weight: 800;
-            color: #ffd15c;
+        .player-card.active {
+            border-color: #ffd15c;
+            box-shadow: 0 0 20px rgba(255, 209, 92, 0.15);
+        }
+
+        .player-card.p1.active { border-color: #e84060; box-shadow: 0 0 20px rgba(232, 64, 96, 0.15); }
+        .player-card.p2.active { border-color: #4a90d9; box-shadow: 0 0 20px rgba(74, 144, 217, 0.15); }
+        .player-card.p3.active { border-color: #2dc84d; box-shadow: 0 0 20px rgba(45, 200, 77, 0.15); }
+
+        .player-card .player-indicator {
+            width: 10px; height: 10px; border-radius: 50%;
+            display: inline-block; margin-right: 6px; vertical-align: middle;
+        }
+        .p1 .player-indicator { background: #e84060; }
+        .p2 .player-indicator { background: #4a90d9; }
+        .p3 .player-indicator { background: #2dc84d; }
+
+        .player-card .player-name {
+            font-size: 15px; font-weight: 700; color: #fff; display: inline; vertical-align: middle;
+        }
+
+        .player-card .player-score {
+            font-size: 32px; font-weight: 800; margin-top: 6px;
             font-variant-numeric: tabular-nums;
         }
+        .p1 .player-score { color: #e84060; }
+        .p2 .player-score { color: #4a90d9; }
+        .p3 .player-score { color: #2dc84d; }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
+        .player-card .player-turn {
+            font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+            color: #5a6280; margin-top: 4px; height: 16px;
         }
+        .player-card.active .player-turn { color: #ffd15c; }
 
-        /* Jeopardy board */
+        /* ====== JEOPARDY BOARD ====== */
         .board {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -70,15 +94,15 @@
         .category-header {
             background: linear-gradient(135deg, #1a2744, #253560);
             border-radius: 10px;
-            padding: 16px 10px;
+            padding: 14px 8px;
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: #fff;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             line-height: 1.3;
-            min-height: 70px;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -87,14 +111,14 @@
         .cell {
             background: linear-gradient(135deg, #1a2050, #222e5a);
             border-radius: 10px;
-            padding: 20px 10px;
+            padding: 16px 8px;
             text-align: center;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 800;
             color: #ffd15c;
             cursor: pointer;
             transition: all 0.2s;
-            min-height: 80px;
+            min-height: 68px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -109,254 +133,239 @@
         }
 
         .cell.used {
-            background: #0d1222;
-            color: #1e2640;
-            cursor: default;
-            border-color: transparent;
-            transform: none;
+            background: #0d1222; color: #1e2640;
+            cursor: default; border-color: transparent; transform: none;
+        }
+        .cell.used:hover { transform: none; border-color: transparent; }
+
+        .progress-bar {
+            margin-top: 16px;
+            display: flex; align-items: center; gap: 12px; justify-content: center;
+        }
+        .progress-track { width: 200px; height: 6px; background: #1e2640; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #ffd15c; border-radius: 3px; transition: width 0.5s ease; }
+        .progress-text { font-size: 12px; color: #5a6280; }
+
+        /* ====== SETUP SCREEN ====== */
+        .setup-overlay {
+            position: fixed; inset: 0;
+            background: rgba(10, 14, 26, 0.97);
+            z-index: 3000;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(12px);
+        }
+        .setup-overlay.hidden { display: none; }
+
+        .setup-card {
+            background: #141a2e; border: 2px solid #1e2640;
+            border-radius: 24px; padding: 48px; max-width: 500px; width: 90%; text-align: center;
         }
 
-        .cell.used:hover {
-            transform: none;
-            border-color: transparent;
+        .setup-card h2 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+        .setup-card h2 span { color: #c8102e; }
+        .setup-card p { font-size: 14px; color: #8892a8; margin-bottom: 32px; }
+
+        .setup-input-group {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 16px;
         }
 
-        /* Modal */
+        .setup-dot {
+            width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+        }
+
+        .setup-input {
+            flex: 1; padding: 12px 16px;
+            background: #0d1222; border: 1px solid #1e2640; border-radius: 10px;
+            color: #fff; font-family: inherit; font-size: 15px; font-weight: 600;
+            outline: none; transition: border-color 0.2s;
+        }
+        .setup-input:focus { border-color: #ffd15c; }
+        .setup-input::placeholder { color: #3a4a60; }
+
+        .setup-btn {
+            margin-top: 24px; padding: 14px 48px;
+            background: #ffd15c; color: #0a0e1a; border: none; border-radius: 12px;
+            font-family: inherit; font-size: 16px; font-weight: 800;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .setup-btn:hover { background: #ffe08a; }
+
+        /* ====== QUESTION MODAL ====== */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 14, 26, 0.92);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0;
+            background: rgba(10, 14, 26, 0.92); z-index: 1000;
+            align-items: center; justify-content: center;
             backdrop-filter: blur(10px);
         }
-
         .modal-overlay.active { display: flex; }
 
         .modal {
             background: linear-gradient(135deg, #141a2e, #1a2550);
-            border: 2px solid #ffd15c;
-            border-radius: 24px;
-            padding: 48px;
-            max-width: 700px;
-            width: 90%;
-            text-align: center;
-            position: relative;
+            border: 2px solid #ffd15c; border-radius: 24px;
+            padding: 40px; max-width: 700px; width: 90%;
+            text-align: center; position: relative;
             box-shadow: 0 0 80px rgba(255, 209, 92, 0.1);
         }
 
-        .modal-points {
-            font-size: 18px;
-            font-weight: 700;
-            color: #ffd15c;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .modal-category {
-            font-size: 13px;
-            color: #8892a8;
-            margin-bottom: 24px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .modal-question {
-            font-size: 24px;
-            font-weight: 600;
-            color: #fff;
-            line-height: 1.5;
-            margin-bottom: 32px;
-        }
+        .modal-points { font-size: 16px; font-weight: 700; color: #ffd15c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .modal-category { font-size: 12px; color: #8892a8; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-question { font-size: 22px; font-weight: 600; color: #fff; line-height: 1.5; margin-bottom: 28px; }
 
         .modal-answer {
-            display: none;
-            background: #0d1222;
-            border-radius: 14px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #1e2640;
+            display: none; background: #0d1222; border-radius: 14px;
+            padding: 20px; margin-bottom: 20px; border: 1px solid #1e2640;
         }
-
         .modal-answer.show { display: block; }
+        .modal-answer-label { font-size: 11px; color: #8892a8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .modal-answer-text { font-size: 18px; font-weight: 700; color: #2dc84d; line-height: 1.4; }
+        .modal-answer-detail { font-size: 12px; color: #8892a8; margin-top: 6px; line-height: 1.5; }
 
-        .modal-answer-label {
-            font-size: 11px;
-            color: #8892a8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .modal-answer-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: #2dc84d;
-            line-height: 1.4;
-        }
-
-        .modal-answer-detail {
-            font-size: 13px;
-            color: #8892a8;
-            margin-top: 8px;
-            line-height: 1.5;
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+        .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
         .btn {
-            padding: 12px 28px;
-            border-radius: 10px;
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
+            padding: 11px 24px; border-radius: 10px; font-family: inherit;
+            font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s;
         }
 
-        .btn-reveal {
-            background: #ffd15c;
-            color: #0a0e1a;
-        }
+        .btn-reveal { background: #ffd15c; color: #0a0e1a; }
         .btn-reveal:hover { background: #ffe08a; }
 
-        .btn-correct {
-            background: #2dc84d;
-            color: #fff;
+        /* Spiller-knapper i modal */
+        .player-btn-row {
+            display: none; flex-direction: column; gap: 10px; align-items: center;
         }
-        .btn-correct:hover { background: #3dd85d; }
+        .player-btn-row.show { display: flex; }
 
-        .btn-wrong {
-            background: #c8102e;
-            color: #fff;
+        .player-btn-row .label {
+            font-size: 11px; color: #8892a8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;
         }
-        .btn-wrong:hover { background: #e8203e; }
 
-        .btn-close {
-            background: #1e2640;
-            color: #8892a8;
+        .player-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+        .btn-player {
+            padding: 12px 24px; border-radius: 10px; font-family: inherit;
+            font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid;
+            background: transparent; transition: all 0.2s; min-width: 120px;
         }
-        .btn-close:hover { background: #2a3455; color: #fff; }
+        .btn-player:hover { transform: scale(1.05); }
 
-        /* Final score */
+        .btn-player.bp1 { color: #e84060; border-color: #e84060; }
+        .btn-player.bp1:hover { background: #e84060; color: #fff; }
+        .btn-player.bp2 { color: #4a90d9; border-color: #4a90d9; }
+        .btn-player.bp2:hover { background: #4a90d9; color: #fff; }
+        .btn-player.bp3 { color: #2dc84d; border-color: #2dc84d; }
+        .btn-player.bp3:hover { background: #2dc84d; color: #fff; }
+
+        .btn-nobody {
+            padding: 10px 20px; border-radius: 10px; font-family: inherit;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            background: #1e2640; color: #8892a8; border: none; margin-top: 4px;
+        }
+        .btn-nobody:hover { background: #2a3455; color: #fff; }
+
+        /* ====== FINAL SCREEN ====== */
         .final-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 14, 26, 0.95);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0;
+            background: rgba(10, 14, 26, 0.95); z-index: 2000;
+            align-items: center; justify-content: center;
             backdrop-filter: blur(12px);
         }
-
         .final-overlay.active { display: flex; }
 
-        .final-card {
-            text-align: center;
-            padding: 60px;
-        }
+        .final-card { text-align: center; padding: 48px; max-width: 600px; width: 90%; }
+        .final-title { font-size: 14px; color: #8892a8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 32px; }
 
-        .final-label {
-            font-size: 14px;
-            color: #8892a8;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 16px;
-        }
+        .podium { display: flex; align-items: flex-end; justify-content: center; gap: 16px; margin-bottom: 40px; }
 
-        .final-score {
-            font-size: 80px;
-            font-weight: 800;
-            color: #ffd15c;
-            line-height: 1;
+        .podium-place {
+            text-align: center; border-radius: 16px; padding: 20px 24px; min-width: 140px;
         }
+        .podium-place.first { background: linear-gradient(135deg, #2a2010, #1a1808); border: 2px solid #ffd15c; order: 2; }
+        .podium-place.second { background: #141a2e; border: 2px solid #8892a8; order: 1; }
+        .podium-place.third { background: #141a2e; border: 2px solid #5a4a30; order: 3; }
 
-        .final-max {
-            font-size: 18px;
-            color: #5a6280;
-            margin-top: 8px;
-            margin-bottom: 24px;
-        }
-
-        .final-msg {
-            font-size: 20px;
-            color: #fff;
-            margin-bottom: 32px;
-        }
+        .podium-rank { font-size: 32px; margin-bottom: 4px; }
+        .podium-name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .podium-score { font-size: 28px; font-weight: 800; }
+        .podium-place.first .podium-score { color: #ffd15c; }
+        .podium-place.second .podium-score { color: #8892a8; }
+        .podium-place.third .podium-score { color: #8a7040; }
 
         .btn-reset {
-            background: #ffd15c;
-            color: #0a0e1a;
-            padding: 14px 36px;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
+            background: #ffd15c; color: #0a0e1a; padding: 14px 36px;
+            border-radius: 12px; font-family: inherit; font-size: 16px;
+            font-weight: 700; cursor: pointer; border: none;
         }
         .btn-reset:hover { background: #ffe08a; }
 
-        .progress-bar {
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            justify-content: center;
-        }
-
-        .progress-track {
-            width: 200px;
-            height: 6px;
-            background: #1e2640;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #ffd15c;
-            border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-
-        .progress-text {
-            font-size: 12px;
-            color: #5a6280;
-        }
-
         @media (max-width: 700px) {
-            .board { grid-template-columns: repeat(5, 1fr); gap: 4px; }
-            .category-header { font-size: 10px; padding: 10px 4px; min-height: 50px; }
-            .cell { font-size: 18px; min-height: 55px; padding: 10px 4px; }
-            .modal { padding: 28px 20px; }
-            .modal-question { font-size: 18px; }
-            .header { padding: 14px 20px; }
-            .header h1 { font-size: 18px; }
+            .board { gap: 4px; }
+            .category-header { font-size: 9px; padding: 8px 4px; min-height: 45px; }
+            .cell { font-size: 16px; min-height: 50px; padding: 8px 4px; }
+            .modal { padding: 24px 16px; }
+            .modal-question { font-size: 16px; }
+            .header { padding: 12px 16px; }
+            .header h1 { font-size: 16px; }
+            .players { gap: 6px; }
+            .player-card { padding: 10px 8px; }
+            .player-card .player-score { font-size: 24px; }
+            .podium-place { min-width: 100px; padding: 14px 12px; }
         }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>Valgquiz <span>2026</span> – Jeopardy!</h1>
-    <div class="scoreboard">
-        <div class="score-label">Score</div>
-        <div class="score-value" id="score">0</div>
+<!-- SETUP SCREEN -->
+<div class="setup-overlay" id="setupOverlay">
+    <div class="setup-card">
+        <h2>Valgquiz <span>2026</span></h2>
+        <p>Indtast navne for 3 spillere – Jeopardy-style!</p>
+        <div class="setup-input-group">
+            <div class="setup-dot" style="background:#e84060"></div>
+            <input class="setup-input" id="nameP1" placeholder="Spiller 1" maxlength="20" value="">
+        </div>
+        <div class="setup-input-group">
+            <div class="setup-dot" style="background:#4a90d9"></div>
+            <input class="setup-input" id="nameP2" placeholder="Spiller 2" maxlength="20" value="">
+        </div>
+        <div class="setup-input-group">
+            <div class="setup-dot" style="background:#2dc84d"></div>
+            <input class="setup-input" id="nameP3" placeholder="Spiller 3" maxlength="20" value="">
+        </div>
+        <button class="setup-btn" onclick="startGame()">Start spillet</button>
     </div>
 </div>
 
+<div class="header">
+    <h1>Valgquiz <span>2026</span> – Jeopardy!</h1>
+    <div style="font-size:12px; color:#8892a8;" id="turnIndicator"></div>
+</div>
+
 <div class="container">
+    <!-- SPILLERE -->
+    <div class="players">
+        <div class="player-card p1" id="card0" onclick="selectPlayer(0)">
+            <span class="player-indicator"></span>
+            <span class="player-name" id="pName0">Spiller 1</span>
+            <div class="player-score" id="pScore0">0</div>
+            <div class="player-turn" id="pTurn0"></div>
+        </div>
+        <div class="player-card p2" id="card1" onclick="selectPlayer(1)">
+            <span class="player-indicator"></span>
+            <span class="player-name" id="pName1">Spiller 2</span>
+            <div class="player-score" id="pScore1">0</div>
+            <div class="player-turn" id="pTurn1"></div>
+        </div>
+        <div class="player-card p3" id="card2" onclick="selectPlayer(2)">
+            <span class="player-indicator"></span>
+            <span class="player-name" id="pName2">Spiller 3</span>
+            <div class="player-score" id="pScore2">0</div>
+            <div class="player-turn" id="pTurn2"></div>
+        </div>
+    </div>
+
+    <!-- BOARD -->
     <div class="board" id="board"></div>
     <div class="progress-bar">
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
@@ -364,7 +373,7 @@
     </div>
 </div>
 
-<!-- Question modal -->
+<!-- QUESTION MODAL -->
 <div class="modal-overlay" id="questionModal">
     <div class="modal">
         <div class="modal-points" id="qPoints"></div>
@@ -375,24 +384,27 @@
             <div class="modal-answer-text" id="qAnswerText"></div>
             <div class="modal-answer-detail" id="qAnswerDetail"></div>
         </div>
-        <div class="btn-row" id="btnRow">
-            <button class="btn btn-reveal" id="btnReveal" onclick="revealAnswer()">Vis svar</button>
+        <div class="btn-row" id="btnRevealRow">
+            <button class="btn btn-reveal" onclick="revealAnswer()">Vis svar</button>
         </div>
-        <div class="btn-row" id="btnScore" style="display:none;">
-            <button class="btn btn-correct" onclick="scoreAnswer(true)">Rigtigt!</button>
-            <button class="btn btn-wrong" onclick="scoreAnswer(false)">Forkert</button>
+        <div class="player-btn-row" id="playerBtnRow">
+            <div class="label">Hvem svarede rigtigt?</div>
+            <div class="player-btns">
+                <button class="btn-player bp1" id="btnP0" onclick="awardPoints(0)"></button>
+                <button class="btn-player bp2" id="btnP1" onclick="awardPoints(1)"></button>
+                <button class="btn-player bp3" id="btnP2" onclick="awardPoints(2)"></button>
+            </div>
+            <button class="btn-nobody" onclick="awardPoints(-1)">Ingen svarede rigtigt</button>
         </div>
     </div>
 </div>
 
-<!-- Final score -->
+<!-- FINAL SCREEN -->
 <div class="final-overlay" id="finalOverlay">
     <div class="final-card">
-        <div class="final-label">Din endelige score</div>
-        <div class="final-score" id="finalScore">0</div>
-        <div class="final-max">ud af 7.500 point</div>
-        <div class="final-msg" id="finalMsg"></div>
-        <button class="btn-reset" onclick="resetGame()">Spil igen</button>
+        <div class="final-title">Spillet er slut!</div>
+        <div class="podium" id="podium"></div>
+        <button class="btn-reset" onclick="fullReset()">Spil igen</button>
     </div>
 </div>
 
@@ -452,15 +464,42 @@ const categories = [
 ];
 
 const pointValues = [100, 200, 300, 400, 500];
-let score = 0;
-let answered = 0;
 const total = 25;
+
+// Player state
+const players = [
+    { name: 'Spiller 1', score: 0 },
+    { name: 'Spiller 2', score: 0 },
+    { name: 'Spiller 3', score: 0 },
+];
+const playerColors = ['#e84060', '#4a90d9', '#2dc84d'];
+
+let currentPlayer = 0;
+let answered = 0;
 let currentPoints = 0;
+
+// ====== SETUP ======
+document.getElementById('nameP1').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('nameP2').focus(); });
+document.getElementById('nameP2').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('nameP3').focus(); });
+document.getElementById('nameP3').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
+
+function startGame() {
+    players[0].name = document.getElementById('nameP1').value.trim() || 'Spiller 1';
+    players[1].name = document.getElementById('nameP2').value.trim() || 'Spiller 2';
+    players[2].name = document.getElementById('nameP3').value.trim() || 'Spiller 3';
+
+    for (let i = 0; i < 3; i++) {
+        document.getElementById('pName' + i).textContent = players[i].name;
+        document.getElementById('btnP' + i).textContent = players[i].name;
+    }
+
+    document.getElementById('setupOverlay').classList.add('hidden');
+    updateTurn();
+}
 
 // ====== BUILD BOARD ======
 const board = document.getElementById('board');
 
-// Category headers
 categories.forEach(cat => {
     const header = document.createElement('div');
     header.className = 'category-header';
@@ -468,7 +507,6 @@ categories.forEach(cat => {
     board.appendChild(header);
 });
 
-// Question cells
 for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 5; col++) {
         const cell = document.createElement('div');
@@ -476,9 +514,35 @@ for (let row = 0; row < 5; row++) {
         cell.textContent = pointValues[row];
         cell.dataset.col = col;
         cell.dataset.row = row;
-        cell.addEventListener('click', () => openQuestion(col, row, cell));
+        cell.addEventListener('click', function() { openQuestion(col, row, cell); });
         board.appendChild(cell);
     }
+}
+
+// ====== TURN MANAGEMENT ======
+function selectPlayer(idx) {
+    currentPlayer = idx;
+    updateTurn();
+}
+
+function updateTurn() {
+    for (let i = 0; i < 3; i++) {
+        const card = document.getElementById('card' + i);
+        const turn = document.getElementById('pTurn' + i);
+        if (i === currentPlayer) {
+            card.classList.add('active');
+            turn.textContent = 'Vælger';
+        } else {
+            card.classList.remove('active');
+            turn.textContent = '';
+        }
+    }
+    document.getElementById('turnIndicator').textContent = players[currentPlayer].name + ' vælger';
+}
+
+function nextPlayer() {
+    currentPlayer = (currentPlayer + 1) % 3;
+    updateTurn();
 }
 
 // ====== GAME LOGIC ======
@@ -496,77 +560,100 @@ function openQuestion(col, row, cell) {
     document.getElementById('qAnswerDetail').textContent = q.detail;
 
     document.getElementById('qAnswer').classList.remove('show');
-    document.getElementById('btnReveal').style.display = '';
-    document.getElementById('btnRow').style.display = '';
-    document.getElementById('btnScore').style.display = 'none';
+    document.getElementById('btnRevealRow').style.display = 'flex';
+    document.getElementById('playerBtnRow').classList.remove('show');
 
     document.getElementById('questionModal').classList.add('active');
-
     cell.classList.add('used');
     cell.textContent = '';
 }
 
 function revealAnswer() {
     document.getElementById('qAnswer').classList.add('show');
-    document.getElementById('btnReveal').style.display = 'none';
-    document.getElementById('btnScore').style.display = 'flex';
+    document.getElementById('btnRevealRow').style.display = 'none';
+    document.getElementById('playerBtnRow').classList.add('show');
 }
 
-function scoreAnswer(correct) {
-    if (correct) {
-        score += currentPoints;
+function awardPoints(playerIdx) {
+    if (playerIdx >= 0) {
+        players[playerIdx].score += currentPoints;
+        // Den der svarer rigtigt vælger næste
+        currentPlayer = playerIdx;
+    } else {
+        // Ingen svarede rigtigt – gå videre til næste spiller
+        nextPlayer();
     }
-    answered++;
 
-    document.getElementById('score').textContent = score.toLocaleString('da-DK');
-    document.getElementById('progressFill').style.width = (answered / total * 100) + '%';
-    document.getElementById('progressText').textContent = answered + ' / ' + total;
+    answered++;
+    updateScoreboard();
 
     document.getElementById('questionModal').classList.remove('active');
+    updateTurn();
 
     if (answered >= total) {
-        setTimeout(showFinal, 500);
+        setTimeout(showFinal, 600);
     }
 }
 
+function updateScoreboard() {
+    for (let i = 0; i < 3; i++) {
+        document.getElementById('pScore' + i).textContent = players[i].score.toLocaleString('da-DK');
+    }
+    document.getElementById('progressFill').style.width = (answered / total * 100) + '%';
+    document.getElementById('progressText').textContent = answered + ' / ' + total;
+}
+
+// ====== FINAL SCREEN ======
 function showFinal() {
-    document.getElementById('finalScore').textContent = score.toLocaleString('da-DK');
+    const sorted = players.map(function(p, i) { return { name: p.name, score: p.score, color: playerColors[i] }; });
+    sorted.sort(function(a, b) { return b.score - a.score; });
 
-    let msg = '';
-    const pct = score / 7500 * 100;
-    if (pct >= 90) msg = 'Politisk ekspert! Du kender dansk politik til fingerspidserne.';
-    else if (pct >= 70) msg = 'Stærkt! Du er klar til valgaften.';
-    else if (pct >= 50) msg = 'Godkendt! Du ved mere end de fleste.';
-    else if (pct >= 30) msg = 'Der er plads til forbedring – men du er med!';
-    else msg = 'Måske tid til at tænde DR og følge med?';
+    const ranks = ['first', 'second', 'third'];
+    const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
 
-    document.getElementById('finalMsg').textContent = msg;
+    const podium = document.getElementById('podium');
+    podium.innerHTML = '';
+
+    sorted.forEach(function(p, i) {
+        const place = document.createElement('div');
+        place.className = 'podium-place ' + ranks[i];
+        place.innerHTML =
+            '<div class="podium-rank">' + medals[i] + '</div>' +
+            '<div class="podium-name">' + p.name + '</div>' +
+            '<div class="podium-score">' + p.score.toLocaleString('da-DK') + '</div>';
+        podium.appendChild(place);
+    });
+
     document.getElementById('finalOverlay').classList.add('active');
 }
 
-function resetGame() {
-    score = 0;
+function fullReset() {
+    for (let i = 0; i < 3; i++) {
+        players[i].score = 0;
+    }
     answered = 0;
+    currentPlayer = 0;
     currentPoints = 0;
+    updateScoreboard();
+    updateTurn();
 
-    document.getElementById('score').textContent = '0';
-    document.getElementById('progressFill').style.width = '0%';
-    document.getElementById('progressText').textContent = '0 / 25';
     document.getElementById('finalOverlay').classList.remove('active');
 
-    const cells = document.querySelectorAll('.cell');
-    let idx = 0;
-    for (let row = 0; row < 5; row++) {
-        for (let col = 0; col < 5; col++) {
+    var cells = document.querySelectorAll('.cell');
+    var idx = 0;
+    for (var row = 0; row < 5; row++) {
+        for (var col = 0; col < 5; col++) {
             cells[idx].classList.remove('used');
             cells[idx].textContent = pointValues[row];
             idx++;
         }
     }
+
+    document.getElementById('setupOverlay').classList.remove('hidden');
 }
 
 // Escape to close
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.getElementById('questionModal').classList.remove('active');
     }
