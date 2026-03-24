@@ -8,1183 +8,376 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'DM Sans',sans-serif;background:#06090f;color:#c8d4e0;min-height:100vh;overflow-x:hidden}
+        body{font-family:'DM Sans',sans-serif;background:#06090f;color:#c8d4e0;min-height:100vh}
 
-        /* HEADER */
-        .top-bar{background:#0c1018;border-bottom:2px solid #c8102e;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;position:sticky;top:0;z-index:100}
-        .top-bar .logo{font-size:18px;font-weight:800;color:#fff}
-        .top-bar .logo span{color:#c8102e}
-        .live-pill{display:flex;align-items:center;gap:6px;background:#c8102e;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:0.5px}
-        .live-pill::before{content:'';width:7px;height:7px;background:#fff;border-radius:50%;animation:blink 1s infinite}
+        .top-bar{background:#0c1018;border-bottom:2px solid #c8102e;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+        .logo{font-size:18px;font-weight:800;color:#fff}.logo span{color:#c8102e}
+        .live-pill{display:flex;align-items:center;gap:6px;background:#c8102e;color:#fff;padding:3px 10px;border-radius:16px;font-size:11px;font-weight:700}
+        .live-pill::before{content:'';width:6px;height:6px;background:#fff;border-radius:50%;animation:blink 1s infinite}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-        .clock{font-size:28px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:1px}
-        .counted-mini{font-size:13px;color:#8892a8;text-align:right}
-        .counted-mini b{color:#fff;font-size:18px}
+        .clock{font-size:22px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+        .meta{font-size:11px;color:#5a6280;text-align:right}
+        .meta b{color:#fff}
 
-        /* TICKER */
-        .ticker-wrap{background:#c8102e;overflow:hidden;height:32px;display:flex;align-items:center;position:relative}
-        .ticker-label{background:#8b0a1e;color:#fff;font-size:11px;font-weight:700;padding:0 14px;height:100%;display:flex;align-items:center;z-index:2;letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
-        .ticker-track{display:flex;animation:scroll 40s linear infinite;white-space:nowrap}
-        .ticker-track span{padding:0 40px;font-size:13px;font-weight:600;color:#fff}
+        .ticker{background:#c8102e;overflow:hidden;height:28px;display:flex;align-items:center}
+        .ticker-label{background:#8b0a1e;color:#fff;font-size:10px;font-weight:700;padding:0 12px;height:100%;display:flex;align-items:center;z-index:2;letter-spacing:1px;flex-shrink:0}
+        .ticker-track{display:flex;animation:scroll 35s linear infinite;white-space:nowrap}
+        .ticker-track span{padding:0 32px;font-size:12px;font-weight:600;color:#fff}
         @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-        /* LAYOUT */
-        .main{display:grid;grid-template-columns:1fr 360px;gap:0;min-height:calc(100vh - 76px)}
-        .left{padding:20px}
-        .right{background:#0a0f18;border-left:1px solid #141c2a;padding:16px;overflow-y:auto;max-height:calc(100vh - 76px)}
+        .container{max-width:1100px;margin:0 auto;padding:16px}
 
-        /* BLOC BATTLE */
-        .bloc-battle{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:#0c1018;border-radius:16px;overflow:hidden;border:1px solid #141c2a}
-        .bb-side{flex:1;padding:24px 20px;text-align:center}
-        .bb-side.red{background:linear-gradient(135deg,#180a10,#0c1018)}
-        .bb-side.blue{background:linear-gradient(135deg,#0c1018,#0a0e18)}
-        .bb-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}
-        .bb-side.red .bb-label{color:#e84060}
-        .bb-side.blue .bb-label{color:#4a90d9}
-        .bb-seats{font-size:52px;font-weight:800;line-height:1}
-        .bb-side.red .bb-seats{color:#e84060}
-        .bb-side.blue .bb-seats{color:#4a90d9}
-        .bb-pct{font-size:14px;color:#5a6280;margin-top:4px}
-        .bb-vs{background:#141c2a;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-        .bb-vs .vs-text{font-size:10px;color:#5a6280;text-transform:uppercase;letter-spacing:1px}
-        .bb-vs .vs-m{font-size:20px;font-weight:800;color:#a78bfa}
-        .bb-vs .vs-label{font-size:9px;color:#5a6280}
-        .bb-bar{height:6px;display:flex;border-radius:3px;overflow:hidden;margin:0 20px 0 20px}
-        .bb-bar-r{background:linear-gradient(90deg,#c8102e,#e84060);transition:width 1s}
-        .bb-bar-m{background:#a78bfa;transition:width 1s}
-        .bb-bar-b{background:linear-gradient(90deg,#4a90d9,#1a5bb5);transition:width 1s}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+        @media(max-width:800px){.grid{grid-template-columns:1fr}}
 
-        /* PARTY TABLE */
-        .party-table{margin-bottom:16px}
-        .pt-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #0e1420;transition:background 0.3s}
-        .pt-row.flash{background:rgba(255,209,92,0.08)}
-        .pt-letter{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
-        .pt-name{flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pt-bar{width:120px;height:16px;background:#0a0f14;border-radius:4px;overflow:hidden;flex-shrink:0}
-        .pt-bar-fill{height:100%;border-radius:4px;transition:width 1.5s ease}
-        .pt-pct{width:50px;text-align:right;font-weight:700;font-size:14px;flex-shrink:0;font-variant-numeric:tabular-nums}
-        .pt-change{width:40px;text-align:right;font-size:11px;font-weight:600;flex-shrink:0}
-        .pt-change.up{color:#2dc84d}
-        .pt-change.down{color:#e84060}
-        .pt-change.neutral{color:#5a6280}
-        .pt-seats{width:35px;text-align:right;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;font-variant-numeric:tabular-nums}
-        .pt-votes{width:70px;text-align:right;font-size:11px;color:#5a6280;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .card{background:#0c1018;border:1px solid #141c2a;border-radius:12px;padding:16px;overflow:hidden}
+        .card h3{font-size:10px;font-weight:700;color:#5a6280;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+        .card h3 .badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700}
+        .badge-live{background:#152a15;color:#2dc84d}
+        .badge-exit{background:#2a2515;color:#ffd15c}
 
-        /* SECTION HEADERS */
-        .section-h{font-size:11px;font-weight:700;color:#5a6280;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 10px;display:flex;align-items:center;gap:8px}
-        .section-h::after{content:'';flex:1;height:1px;background:#141c2a}
+        /* Bloc battle */
+        .blocs{display:flex;align-items:center;gap:0;margin-bottom:12px}
+        .bloc{flex:1;text-align:center;padding:16px 8px}
+        .bloc.red{background:linear-gradient(135deg,#150a0e,#0c1018);border-radius:12px 0 0 12px}
+        .bloc.mid{background:#0e1420;padding:12px 10px}
+        .bloc.blue{background:linear-gradient(135deg,#0c1018,#0a0e15);border-radius:0 12px 12px 0}
+        .bloc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+        .bloc.red .bloc-label{color:#e84060}.bloc.blue .bloc-label{color:#4a90d9}.bloc.mid .bloc-label{color:#a78bfa}
+        .bloc-num{font-size:36px;font-weight:800;line-height:1}
+        .bloc.red .bloc-num{color:#e84060}.bloc.blue .bloc-num{color:#4a90d9}.bloc.mid .bloc-num{color:#a78bfa;font-size:24px}
+        .bloc-sub{font-size:11px;color:#5a6280;margin-top:2px}
+        .bloc-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:0 16px}
+        .bloc-bar div{height:100%;transition:width 1.5s}
 
-        /* STORKREDS MINI */
-        .sk-mini{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:16px}
-        .sk-item{background:#0c1018;border-radius:8px;padding:8px 10px;border:1px solid #141c2a;display:flex;align-items:center;gap:8px}
-        .sk-item .sk-n{font-size:11px;font-weight:600;color:#c8d4e0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .sk-item .sk-b{flex:1;height:4px;background:#141c2a;border-radius:2px;overflow:hidden}
-        .sk-item .sk-bf{height:100%;background:linear-gradient(90deg,#c8102e,#e84060);border-radius:2px;transition:width 1s}
-        .sk-item .sk-p{font-size:11px;font-weight:700;color:#e84060;width:42px;text-align:right;font-variant-numeric:tabular-nums}
-        .sk-item.done{border-color:#1a3a1a}
-        .sk-item.done .sk-bf{background:#2dc84d}
-        .sk-item.done .sk-p{color:#2dc84d}
+        /* Party row */
+        .p-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #0a0e14;transition:background 0.3s}
+        .p-row.flash{background:rgba(255,209,92,0.06)}
+        .p-let{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
+        .p-name{flex:1;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .p-bar{width:100px;height:14px;background:#0a0e14;border-radius:3px;overflow:hidden;flex-shrink:0}
+        .p-bar-fill{height:100%;border-radius:3px;transition:width 1.5s}
+        .p-pct{width:46px;text-align:right;font-weight:700;font-size:13px;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .p-votes{width:65px;text-align:right;font-size:10px;color:#5a6280;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .p-diff{width:40px;text-align:right;font-size:10px;font-weight:600;flex-shrink:0}
+        .p-diff.up{color:#2dc84d}.p-diff.down{color:#e84060}.p-diff.flat{color:#5a6280}
+        .p-seats{width:30px;text-align:right;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
 
-        /* LIVE FEED */
-        .feed{display:flex;flex-direction:column;gap:6px}
-        .feed-item{background:#0c1018;border-radius:8px;padding:10px 12px;border:1px solid #141c2a;animation:fadeIn 0.5s ease}
-        .feed-item.breaking{border-color:#c8102e;background:#120a0e}
-        .feed-item .fi-time{font-size:10px;color:#5a6280;margin-bottom:3px;font-variant-numeric:tabular-nums}
-        .feed-item .fi-text{font-size:12px;color:#c8d4e0;line-height:1.4}
-        .feed-item .fi-text b{color:#fff}
-        .feed-item.breaking .fi-text{color:#e84060}
-        .feed-item.breaking .fi-label{font-size:9px;font-weight:700;color:#c8102e;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        /* Storkreds */
+        .sk-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+        .sk{background:#0a0e14;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:6px;border:1px solid #141c2a;transition:border-color 0.5s}
+        .sk.done{border-color:#1a3a1a}
+        .sk-name{font-size:10px;font-weight:600;color:#c8d4e0;flex:1}
+        .sk-bar{flex:1;height:4px;background:#141c2a;border-radius:2px;overflow:hidden}
+        .sk-bf{height:100%;background:linear-gradient(90deg,#c8102e,#e84060);border-radius:2px;transition:width 1.5s}
+        .sk.done .sk-bf{background:#2dc84d}
+        .sk-pct{font-size:10px;font-weight:700;color:#e84060;width:38px;text-align:right;font-variant-numeric:tabular-nums}
+        .sk.done .sk-pct{color:#2dc84d}
 
-        /* CHART */
-        .chart-wrap{background:#0c1018;border-radius:12px;padding:14px;border:1px solid #141c2a;margin-bottom:16px}
-        .chart-wrap h4{font-size:11px;font-weight:700;color:#5a6280;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-        .chart-box{height:200px;position:relative}
+        /* Feed */
+        .feed{max-height:400px;overflow-y:auto}
+        .fi{background:#0a0e14;border-radius:6px;padding:8px 10px;margin-bottom:4px;border-left:3px solid #141c2a;animation:fadeIn 0.4s}
+        .fi.breaking{border-left-color:#c8102e;background:#120a0e}
+        .fi-time{font-size:9px;color:#5a6280;font-variant-numeric:tabular-nums}
+        .fi-text{font-size:11px;color:#c8d4e0;line-height:1.4;margin-top:2px}
+        .fi-text b{color:#fff}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
 
-        /* COUNTED PROGRESS */
-        .counted-strip{background:#0c1018;border-radius:10px;padding:12px 16px;border:1px solid #141c2a;margin-bottom:16px;display:flex;align-items:center;gap:12px}
-        .cs-label{font-size:11px;color:#5a6280;text-transform:uppercase;letter-spacing:0.5px}
-        .cs-bar{flex:1;height:8px;background:#141c2a;border-radius:4px;overflow:hidden}
-        .cs-bar-fill{height:100%;background:linear-gradient(90deg,#c8102e,#e84060);border-radius:4px;transition:width 1s}
-        .cs-pct{font-size:18px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;min-width:60px;text-align:right}
-        .cs-detail{font-size:10px;color:#5a6280;text-align:right}
+        /* Chart */
+        .chart-box{height:180px;position:relative}
 
-        /* POPUP NOTIFICATIONS */
-        .popup-container{position:fixed;top:80px;right:24px;z-index:500;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:400px}
+        /* Counted strip */
+        .counted{display:flex;align-items:center;gap:10px;margin-bottom:12px;background:#0c1018;border:1px solid #141c2a;border-radius:10px;padding:10px 14px}
+        .counted-label{font-size:10px;color:#5a6280;text-transform:uppercase;letter-spacing:0.5px}
+        .counted-bar{flex:1;height:6px;background:#141c2a;border-radius:3px;overflow:hidden}
+        .counted-fill{height:100%;background:linear-gradient(90deg,#c8102e,#e84060);border-radius:3px;transition:width 1.5s;animation:pulse 2s ease-in-out infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+        .counted-pct{font-size:16px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+        .counted-detail{font-size:10px;color:#5a6280}
 
-        .popup{
-            background:#0c1018;border-radius:14px;padding:18px 22px;
-            border:2px solid #1e2640;pointer-events:auto;
-            animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
-            box-shadow:0 8px 40px rgba(0,0,0,0.5);
-            position:relative;overflow:hidden;
-        }
-        .popup.exit{animation:popOut 0.4s ease forwards}
+        /* Valgsted popup */
+        .popup-box{position:fixed;top:70px;right:16px;z-index:500;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:340px}
+        .popup{background:#0c1018;border-radius:10px;padding:12px 16px;border:1px solid #2dc84d;pointer-events:auto;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 4px 20px rgba(0,0,0,0.5);border-top:2px solid #2dc84d}
+        .popup.exit{animation:popOut 0.3s ease forwards}
+        .popup-tag{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2dc84d;margin-bottom:2px}
+        .popup-title{font-size:14px;font-weight:700;color:#fff}
+        .popup-detail{font-size:11px;color:#8892a8;margin-top:2px}
+        .popup-bar{height:3px;background:#141c2a;border-radius:2px;margin-top:6px;overflow:hidden}
+        .popup-bar-fill{height:100%;background:#2dc84d;border-radius:2px;animation:shrink 5s linear forwards}
+        @keyframes popIn{0%{opacity:0;transform:translateX(40px) scale(0.9)}100%{opacity:1;transform:translateX(0) scale(1)}}
+        @keyframes popOut{to{opacity:0;transform:translateX(40px)}}
+        @keyframes shrink{0%{width:100%}100%{width:0}}
 
-        .popup::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
-        .popup.breaking{border-color:#c8102e}
-        .popup.breaking::before{background:#c8102e}
-        .popup.milestone{border-color:#ffd15c}
-        .popup.milestone::before{background:#ffd15c}
-        .popup.storkreds{border-color:#2dc84d}
-        .popup.storkreds::before{background:#2dc84d}
-        .popup.party{border-color:#a78bfa}
-        .popup.party::before{background:#a78bfa}
-        .popup.bloc{border-color:#4a90d9}
-        .popup.bloc::before{background:linear-gradient(90deg,#e84060,#4a90d9)}
-
-        .popup .pop-icon{font-size:28px;float:left;margin-right:12px;margin-top:2px}
-        .popup .pop-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
-        .popup.breaking .pop-tag{color:#c8102e}
-        .popup.milestone .pop-tag{color:#ffd15c}
-        .popup.storkreds .pop-tag{color:#2dc84d}
-        .popup.party .pop-tag{color:#a78bfa}
-        .popup.bloc .pop-tag{color:#4a90d9}
-
-        .popup .pop-title{font-size:16px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:4px}
-        .popup .pop-detail{font-size:12px;color:#8892a8;line-height:1.4}
-        .popup .pop-time{font-size:10px;color:#5a6280;margin-top:6px;font-variant-numeric:tabular-nums}
-
-        .popup .pop-progress{margin-top:10px;height:4px;background:#141c2a;border-radius:2px;overflow:hidden}
-        .popup .pop-progress-fill{height:100%;background:#5a6280;border-radius:2px;animation:shrink 6s linear forwards}
-
-        @keyframes popIn{0%{opacity:0;transform:translateX(60px) scale(0.8)}100%{opacity:1;transform:translateX(0) scale(1)}}
-        @keyframes popOut{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(60px)}}
-        @keyframes shrink{0%{width:100%}100%{width:0%}}
-
-        /* FULLSCREEN FLASH for mega events */
-        .mega-flash{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;text-align:center;animation:megaIn 0.6s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
-        .mega-flash.exit{animation:megaOut 0.8s ease forwards}
-        .mega-flash.red-bg{background:rgba(200,16,46,0.92)}
-        .mega-flash.blue-bg{background:rgba(26,91,181,0.92)}
-        .mega-flash.gold-bg{background:rgba(40,30,10,0.95)}
-        .mega-flash.green-bg{background:rgba(10,40,15,0.95)}
-        .mega-flash .mf-icon{font-size:64px;margin-bottom:12px}
-        .mega-flash .mf-title{font-size:42px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 4px 20px rgba(0,0,0,0.3)}
-        .mega-flash .mf-sub{font-size:18px;color:rgba(255,255,255,0.7);margin-top:8px}
-
-        @keyframes megaIn{0%{opacity:0;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
-        @keyframes megaOut{0%{opacity:1}100%{opacity:0}}
-
-        /* Sound pulse on header */
-        .pulse-ring{animation:pulseRing 1s ease-out}
-        @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(200,16,46,0.6)}100%{box-shadow:0 0 0 20px rgba(200,16,46,0)}}
-
-        /* DENMARK MAP */
-        #dkMap .map-region{fill:#141c2a;stroke:#1e2640;stroke-width:0.8;transition:fill 1.5s ease,filter 0.5s,stroke 0.5s;cursor:pointer}
-        #dkMap .map-region:hover{filter:brightness(1.5);stroke:#ffd15c;stroke-width:1.5}
-        #dkMap .map-region.counting{stroke:#e84060;stroke-width:1}
-        #dkMap .map-region.done{fill:#152a15!important;stroke:#2dc84d;stroke-width:1.2;filter:drop-shadow(0 0 8px rgba(45,200,77,0.4))}
-        #dkMap .map-region.pulse-map{animation:mapPulse 1.5s ease}
-        #dkMap .map-label{font-family:'DM Sans',sans-serif;font-weight:700;font-size:9px;fill:#5a6280;pointer-events:none;text-anchor:middle}
-        @keyframes mapPulse{0%{filter:brightness(1)}30%{filter:brightness(2.5) drop-shadow(0 0 15px rgba(255,209,92,0.6))}100%{filter:brightness(1)}}
-
-        /* ADHD MODE - constant action */
-
-        /* Countdown ring til næste opdatering */
-        .update-ring{position:fixed;bottom:20px;right:20px;z-index:200;width:54px;height:54px}
-        .update-ring svg{transform:rotate(-90deg)}
-        .update-ring circle.bg{fill:none;stroke:#141c2a;stroke-width:3}
-        .update-ring circle.fg{fill:none;stroke:#c8102e;stroke-width:3;stroke-dasharray:138.2;stroke-dashoffset:0;transition:stroke-dashoffset 0.5s linear}
-        .update-ring .ur-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#e84060;font-variant-numeric:tabular-nums}
-
-        /* Animerede parti-score tal */
-        .pt-pct{transition:transform 0.3s}
-        .pt-pct.bump{animation:numBump 0.4s ease}
-        @keyframes numBump{0%{transform:scale(1)}30%{transform:scale(1.3)}100%{transform:scale(1)}}
-
-        /* Glødende blok-tal */
-        .bb-seats{transition:text-shadow 0.5s}
-        .bb-seats.glow-red{text-shadow:0 0 20px rgba(232,64,96,0.6)}
-        .bb-seats.glow-blue{text-shadow:0 0 20px rgba(74,144,217,0.6)}
-
-        /* Pulserende optællings-bar */
-        .cs-bar-fill{animation:barPulse 2s ease-in-out infinite}
-        @keyframes barPulse{0%,100%{opacity:1}50%{opacity:0.7}}
-
-        /* Parti-row highlight sweep */
-        .pt-row.sweep{background:linear-gradient(90deg,transparent 0%,rgba(255,209,92,0.06) 50%,transparent 100%);background-size:200% 100%;animation:sweep 1.5s ease}
-        @keyframes sweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-        /* Ticker speed up on new data */
-        .ticker-track.fast{animation-duration:15s!important}
-
-        /* Confetti for big wins */
-        .confetti-container{position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden}
-        .confetti{position:absolute;width:8px;height:8px;border-radius:2px;animation:confettiFall linear forwards}
-        @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
-
-        /* Storkreds completion celebration */
-        .sk-item.just-done{animation:skCelebrate 1s ease}
-        @keyframes skCelebrate{0%{transform:scale(1)}20%{transform:scale(1.05);box-shadow:0 0 20px rgba(45,200,77,0.3)}100%{transform:scale(1);box-shadow:none}}
-
-        /* NEW badge for fresh data */
-        .new-badge{display:inline-block;background:#c8102e;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:6px;animation:newPulse 1s ease 3;vertical-align:middle}
-        @keyframes newPulse{0%,100%{opacity:1}50%{opacity:0.4}}
-
-        /* Live data wave on header */
-        .top-bar.new-data{animation:headerWave 0.6s ease}
-        @keyframes headerWave{0%{border-bottom-color:#c8102e}50%{border-bottom-color:#ffd15c}100%{border-bottom-color:#c8102e}}
-
-        /* Feed items stack animation */
-        .feed-item{transform-origin:top center}
-        .feed-item:nth-child(1){opacity:1}
-        .feed-item:nth-child(2){opacity:0.9}
-        .feed-item:nth-child(3){opacity:0.8}
-        .feed-item:nth-child(n+6){opacity:0.5}
-
-        /* Floating vote counter */
-        .float-counter{position:fixed;bottom:20px;left:20px;z-index:200;background:#0c1018;border:1px solid #141c2a;border-radius:12px;padding:10px 16px;font-variant-numeric:tabular-nums}
-        .float-counter .fc-label{font-size:9px;color:#5a6280;text-transform:uppercase;letter-spacing:1px}
-        .float-counter .fc-value{font-size:22px;font-weight:800;color:#fff;transition:transform 0.3s}
-        .float-counter .fc-value.bump{animation:numBump 0.4s ease}
-        .float-counter .fc-sub{font-size:10px;color:#5a6280}
-
-        /* Vote particles flying to counter */
-        .vote-particle{position:fixed;z-index:300;pointer-events:none;font-size:14px;animation:particleFly 1.5s ease-in forwards}
-        @keyframes particleFly{0%{opacity:1;transform:scale(1)}80%{opacity:0.8}100%{opacity:0;transform:scale(0.3)}}
-
-        @media(max-width:900px){
-            .main{grid-template-columns:1fr}
-            .right{max-height:none;border-left:none;border-top:1px solid #141c2a}
-        }
-        @media(max-width:600px){
-            .top-bar{flex-wrap:wrap;gap:8px;padding:8px 12px}
-            .clock{font-size:20px}
-            .bb-seats{font-size:36px}
-            .sk-mini{grid-template-columns:1fr}
-            .pt-bar{width:80px}
-            .pt-votes{display:none}
-        }
+        @media(max-width:600px){.p-bar,.p-votes{display:none}.sk-grid{grid-template-columns:1fr}.clock{font-size:16px}}
     </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="top-bar">
     <div class="logo">Folketingsvalg <span>2026</span></div>
     <div class="live-pill">LIVE</div>
     <div class="clock" id="clock">--:--:--</div>
-    <div class="counted-mini">
-        <div><b id="topCounted">0,00%</b> optalt</div>
-        <div id="topType" style="font-size:10px;color:#e84060;">EXIT POLL</div>
-        <div id="lastUpdate" style="font-size:9px;color:#5a6280;margin-top:1px;">Henter data...</div>
-    </div>
+    <div class="meta"><div>Opdateret <b id="lastUp">–</b></div><div id="srcLabel">Henter data...</div></div>
 </div>
 
-<!-- TICKER -->
-<div class="ticker-wrap">
+<div class="ticker">
     <div class="ticker-label">Seneste</div>
-    <div class="ticker-track" id="ticker">
-        <span>Valgstederne er lukket – optælling i gang</span>
-        <span>Exit poll: A 19,2% · F 11,4% · I 10,5% · V 9,3%</span>
-        <span>Moderaterne som kingmaker med 8,2%</span>
-        <span>Alternativet springer til 4,1%</span>
-        <span>Bornholm forventes færdig kl. ~21:49</span>
-        <span>Valgstederne er lukket – optælling i gang</span>
-        <span>Exit poll: A 19,2% · F 11,4% · I 10,5% · V 9,3%</span>
-        <span>Moderaterne som kingmaker med 8,2%</span>
-        <span>Alternativet springer til 4,1%</span>
-        <span>Bornholm forventes færdig kl. ~21:49</span>
-    </div>
+    <div class="ticker-track" id="ticker"><span>Valgaften 2026 – data fra DR opdateres hvert 10. sekund</span><span>Valgaften 2026 – data fra DR opdateres hvert 10. sekund</span></div>
 </div>
 
-<div class="main">
-<div class="left">
+<div class="container">
 
-    <!-- COUNTED PROGRESS -->
-    <div class="counted-strip">
-        <div class="cs-label">Optalt</div>
-        <div class="cs-bar"><div class="cs-bar-fill" id="csBar" style="width:0%"></div></div>
-        <div class="cs-pct" id="csPct">0,00%</div>
-        <div class="cs-detail" id="csDetail">0 valgsteder</div>
+    <div class="counted">
+        <div class="counted-label">Optalt</div>
+        <div class="counted-bar"><div class="counted-fill" id="cBar" style="width:0%"></div></div>
+        <div class="counted-pct" id="cPct">0,00%</div>
+        <div class="counted-detail" id="cDetail">0 valgsteder</div>
     </div>
 
-    <!-- BLOC BATTLE -->
-    <div class="bloc-battle">
-        <div class="bb-side red">
-            <div class="bb-label">Rød blok</div>
-            <div class="bb-seats" id="redSeats">85</div>
-            <div class="bb-pct" id="redPct">–</div>
+    <div class="blocs" id="blocsRow">
+        <div class="bloc red"><div class="bloc-label">Rød blok</div><div class="bloc-num" id="rSeats">–</div><div class="bloc-sub" id="rPct"></div></div>
+        <div class="bloc mid"><div class="bloc-label">M</div><div class="bloc-num" id="mSeats">–</div></div>
+        <div class="bloc blue"><div class="bloc-label">Blå blok</div><div class="bloc-num" id="bSeats">–</div><div class="bloc-sub" id="bPct"></div></div>
+    </div>
+    <div class="bloc-bar" style="margin:-4px 16px 12px"><div id="bbR" style="background:#e84060;width:33%"></div><div id="bbM" style="background:#a78bfa;width:8%"></div><div id="bbB" style="background:#4a90d9;width:33%"></div></div>
+
+    <div class="grid">
+        <!-- Partier -->
+        <div class="card" style="grid-row:span 2">
+            <h3>Partier <span class="badge badge-exit" id="dataBadge">EXIT POLL</span></h3>
+            <div id="pTable"></div>
         </div>
-        <div class="bb-vs">
-            <div class="vs-text">vs</div>
-            <div class="vs-m" id="mSeats">14</div>
-            <div class="vs-label">Moderaterne</div>
+
+        <!-- Storkredse -->
+        <div class="card">
+            <h3>Storkredse</h3>
+            <div class="sk-grid" id="skGrid"></div>
         </div>
-        <div class="bb-side blue">
-            <div class="bb-label">Blå blok</div>
-            <div class="bb-seats" id="blueSeats">76</div>
-            <div class="bb-pct" id="bluePct">–</div>
+
+        <!-- Stemmefordeling -->
+        <div class="card">
+            <h3>Stemmefordeling (optalte)</h3>
+            <div class="chart-box"><canvas id="voteChart"></canvas></div>
         </div>
     </div>
-    <div class="bb-bar" style="margin-top:-12px;margin-bottom:20px;">
-        <div class="bb-bar-r" id="bbRed" style="width:48%"></div>
-        <div class="bb-bar-m" id="bbM" style="width:8%"></div>
-        <div class="bb-bar-b" id="bbBlue" style="width:44%"></div>
+
+    <!-- Feed -->
+    <div class="card">
+        <h3>Live feed</h3>
+        <div class="feed" id="feed"></div>
     </div>
-
-    <!-- PARTI TABLE -->
-    <div class="section-h">Partier <span style="font-weight:400;color:#3a4a5a;font-size:9px;letter-spacing:0;text-transform:none;margin-left:8px">vs FV2022 yderst til højre</span></div>
-    <div class="party-table" id="partyTable"></div>
-
-    <!-- STORKREDSE -->
-    <div class="section-h">Storkredse</div>
-    <div class="sk-mini" id="skGrid"></div>
-
 </div>
 
-<!-- RIGHT SIDEBAR -->
-<div class="right">
-
-    <div class="section-h">Danmarkskort</div>
-    <div class="chart-wrap" style="padding:8px">
-        <svg id="dkMap" viewBox="15 15 470 590" style="width:100%;height:auto">
-<path id="map-1" d="M302.6,389.4L302.7,389.7L302.9,390.2L302.9,390.4L303.2,391.2L303.8,391.5L304.6,393.7L304.6,395.5L304.0,397.2L304.2,398.5L304.6,398.5L304.7,398.8L304.4,399.3L304.4,399.6L302.9,400.9L301.9,401.4L301.3,401.9L300.6,403.5L300.1,404.0L299.8,404.2L299.1,405.4L298.2,404.9L297.0,402.2L297.1,401.8L295.3,401.9L294.1,397.7L293.8,395.1L296.6,390.3L299.1,384.7L299.7,384.1L299.8,384.4L299.9,384.3L300.0,384.2L300.0,384.1L300.1,383.8L300.2,382.9L300.1,382.2L300.8,380.3L300.8,381.8L301.6,382.3L301.0,383.5L301.3,383.1L301.5,382.9L301.6,382.7L302.0,384.0L302.4,384.9L301.9,385.8L301.6,386.1L302.6,389.2Z M297.8,385.7L297.3,386.9L297.2,387.7L296.6,387.8L296.7,388.8L296.2,389.4L296.5,389.4L296.6,390.2L296.4,390.3L296.2,390.0L296.2,390.6L295.8,391.3L295.6,391.7L295.5,391.9L295.3,391.7L295.3,391.5L295.3,391.1L295.4,391.1L295.4,390.8L295.1,390.9L295.2,391.0L295.3,391.0L295.1,391.0L294.3,391.2L293.1,389.5L292.4,388.0L292.1,386.0L291.7,384.3L291.4,382.0L291.2,379.6L290.8,377.5L292.7,375.6L294.3,376.3L295.6,375.2L296.7,375.8L297.7,374.7L298.6,376.5L299.1,376.9L298.8,377.3L299.4,376.6L299.8,375.5L301.2,375.5L300.3,378.3L299.9,378.6L299.6,379.0L299.6,380.8L299.5,382.2L299.1,383.5L298.3,383.9L298.2,385.1Z M310.1,384.9L310.5,386.4L310.7,389.6L311.0,391.1L310.8,392.0L310.9,392.7L311.1,393.5L311.1,394.1L311.1,394.8L311.3,395.2L311.5,395.9L311.1,395.9L310.8,396.3L310.3,396.5L309.8,396.3L309.6,395.9L309.5,395.1L309.3,394.7L309.1,394.5L309.1,393.7L308.7,394.3L308.5,394.0L308.2,393.6L308.5,393.6L308.5,392.9L308.2,392.4L308.0,391.9L307.9,391.6L307.9,391.2L307.9,390.7L308.1,390.5L308.0,390.1L308.0,389.8L308.1,389.5L308.3,388.9L308.2,388.2L308.3,387.8L308.3,387.1L308.6,386.5L308.5,386.0L308.8,385.9L309.2,385.7L309.7,385.5L309.7,385.0L310.1,384.9Z" class="map-region"/>
-<text x="301.0" y="396.9" class="map-label">KBH</text>
-<path id="map-2" d="M290.1,396.2L288.5,395.2L286.9,396.5L283.8,396.8L282.3,395.9L280.7,394.4L279.1,393.8L277.8,394.7L274.5,396.3L272.6,391.5L272.9,383.9L275.8,381.8L277.5,379.3L278.4,379.1L279.5,379.5L281.1,380.6L282.9,379.9L282.5,376.6L283.0,374.1L282.1,372.8L280.2,371.2L279.2,369.8L282.0,369.4L283.9,370.0L286.9,369.7L288.3,369.9L288.2,364.7L291.6,362.1L293.6,362.4L296.0,361.7L298.0,360.9L299.4,364.6L299.1,366.4L299.8,369.4L298.8,372.3L298.5,374.0L298.8,375.1L298.2,375.9L296.6,375.8L294.5,375.3L292.5,375.6L290.9,379.3L291.4,382.5L292.1,385.6L292.7,388.5L293.8,391.5L293.6,392.4L293.1,394.0L293.2,396.4L290.1,396.4Z" class="map-region"/>
-<text x="278.1" y="387.4" class="map-label">KBH.O</text>
-<path id="map-3" d="M256.7,338.3L258.3,338.9L259.8,339.5L260.8,340.7L261.3,342.1L262.4,342.4L263.7,343.4L263.5,346.3L262.6,348.8L262.5,351.0L262.5,351.9L263.0,352.4L263.5,352.7L264.8,355.7L264.8,358.0L265.1,360.1L265.0,361.8L265.7,362.7L266.0,363.8L265.8,365.2L266.0,366.2L266.3,367.6L266.5,369.1L266.3,371.4L266.4,374.6L264.9,374.5L264.2,375.0L263.0,374.1L261.7,373.5L257.1,373.9L254.0,373.5L253.6,370.7L253.4,370.1L253.8,369.0L253.9,366.6L254.0,365.0L254.1,363.3L255.1,362.2L255.0,360.1L257.3,358.9L258.1,359.3L258.7,358.6L259.2,357.9L259.4,357.1L259.6,356.1L259.9,354.6L259.6,351.5L258.2,346.1L257.5,344.0L256.5,341.3L256.7,338.4Z M297.3,351.4L297.7,353.1L298.1,353.5L298.0,357.0L298.3,360.7L293.3,362.5L288.9,367.3L283.2,369.8L279.7,371.4L282.7,374.1L281.3,380.8L278.1,378.6L276.3,373.1L269.8,368.3L267.1,364.4L267.2,361.8L266.6,359.3L266.1,356.8L265.2,354.4L266.1,352.2L266.5,351.1L266.6,349.1L265.5,342.4L263.9,336.1L262.8,333.5L261.0,333.2L256.3,337.2L253.4,335.9L253.3,332.1L254.7,330.3L256.4,328.9L259.0,325.8L263.6,321.3L267.6,315.7L270.2,312.7L277.4,305.9L282.2,305.6L288.7,310.8L293.9,311.8L296.2,313.7L299.8,319.2L300.8,321.3L298.9,325.9L297.3,328.7L296.6,330.8L295.8,334.5L295.2,337.9L294.6,340.2L295.8,345.9L296.5,347.2L297.3,351.4Z" class="map-region"/>
-<text x="278.5" y="321.7" class="map-label">NSJÆL</text>
-<path id="map-4" d="M431.3,489.9L428.5,486.2L428.1,486.0L429.4,480.9L429.2,469.6L429.7,465.9L431.7,458.6L432.5,454.8L432.6,452.0L433.2,451.0L433.6,450.4L434.0,450.6L434.1,451.5L434.6,452.2L435.1,452.6L435.3,453.4L435.7,453.8L435.9,454.9L436.2,455.6L436.5,456.5L436.8,457.8L437.7,459.0L438.5,459.5L439.0,460.3L439.6,460.5L440.1,461.1L440.5,462.3L443.3,464.6L445.2,465.2L445.9,465.1L447.0,467.8L449.4,472.0L450.8,473.4L452.6,475.5L454.7,477.0L455.3,477.4L456.4,477.7L457.0,479.2L457.3,480.4L457.4,481.1L457.1,481.6L457.0,482.2L457.0,484.2L457.3,486.2L457.2,489.3L455.7,492.8L454.7,495.7L449.9,503.5L441.7,498.5L436.2,494.2L431.4,490.3Z" class="map-region"/>
-<text x="440.6" y="480.3" class="map-label">BORN</text>
-<path id="map-5" d="M232.7,468.0L227.2,466.5L224.5,467.0L220.3,468.6L218.6,458.6L215.4,453.0L213.5,443.7L212.6,435.9L209.0,410.7L208.5,408.5L206.7,392.3L205.6,386.3L203.4,381.8L195.3,371.8L212.6,373.7L218.5,370.4L224.4,365.7L233.6,346.0L218.7,327.5L248.2,336.8L243.9,350.2L241.8,366.7L242.2,374.1L249.3,376.4L252.1,382.9L258.3,386.5L265.7,382.9L267.9,386.7L269.2,374.4L274.5,371.6L281.4,395.1L276.2,410.9L275.1,420.4L287.2,436.6L278.9,460.4L268.4,472.4L263.5,476.2L266.1,481.5L273.7,482.5L270.0,488.4L270.1,491.4L272.4,503.6L265.9,509.2L251.3,496.9L251.4,495.2L246.6,486.0L251.3,478.8L246.8,475.4L246.7,468.5L241.3,469.5L232.8,468.0Z M212.5,509.7L219.7,513.9L223.2,519.7L229.7,527.4L231.1,531.6L233.6,532.6L236.4,533.2L239.8,537.1L238.8,535.1L235.9,530.5L241.0,526.9L240.1,519.5L244.0,523.9L246.7,528.9L250.1,538.0L252.7,541.7L253.8,544.8L253.6,549.6L251.8,550.0L251.4,550.2L251.5,552.3L250.8,554.0L251.7,555.1L253.5,556.0L253.6,558.0L253.0,559.1L252.0,561.9L251.9,564.0L246.8,563.9L245.3,561.9L244.6,563.5L242.0,561.4L241.2,562.5L238.1,562.0L237.3,562.5L236.2,562.7L234.7,564.8L230.4,572.5L224.3,567.0L216.2,554.2L204.1,546.8L198.6,531.2L198.4,536.0L201.3,537.3L202.5,535.4L207.7,533.1L205.6,531.6L203.5,524.4L204.2,515.6L207.4,512.0L211.7,509.7Z M279.0,492.5L285.1,498.1L291.2,498.8L294.9,502.0L296.6,507.9L295.3,512.4L291.4,510.8L289.8,509.8L286.7,508.9L282.2,510.7L279.8,513.9L276.6,521.1L274.7,523.7L270.8,522.0L270.8,520.8L271.3,520.4L270.5,519.7L269.4,519.9L269.4,519.0L269.5,517.3L270.2,514.3L270.7,512.1L271.6,508.6L273.0,505.9L274.3,505.7L274.9,506.4L275.1,507.0L275.1,507.9L275.3,508.5L275.9,508.0L277.2,507.0L278.1,506.6L279.8,506.7L279.4,508.7L279.8,509.1L281.0,507.7L282.8,505.7L284.0,504.9L282.5,505.2L281.2,504.2L280.6,505.3L279.8,504.3L280.1,500.5L279.6,498.5L278.9,497.1L278.1,495.8L277.1,495.9L277.0,494.5L277.6,493.4L278.5,492.1Z" class="map-region"/>
-<text x="243.6" y="450.6" class="map-label">SJÆL</text>
-<path id="map-6" d="M147.3,474.4L140.2,468.6L139.2,474.0L138.0,474.0L132.1,459.8L132.2,454.7L131.5,443.1L131.5,442.0L128.7,441.0L126.5,430.8L123.0,426.0L123.7,422.8L126.7,423.7L126.1,421.3L123.0,419.6L122.3,416.7L121.4,413.1L124.2,407.9L134.3,413.3L144.2,403.4L155.4,396.4L157.9,398.5L163.0,397.9L169.9,407.2L168.9,416.8L162.7,430.8L165.7,425.7L168.9,419.7L174.3,412.1L176.3,398.9L177.8,399.6L176.5,394.4L182.5,419.6L175.4,421.8L174.8,428.3L179.6,424.4L187.1,437.9L191.2,450.9L187.5,450.0L187.3,450.9L188.2,473.1L185.3,489.2L179.5,492.9L172.4,496.8L161.8,491.5L156.1,488.1L153.1,489.3L151.0,490.0L145.7,483.4L148.1,481.3L147.3,474.8Z M197.1,473.8L197.7,478.7L197.1,484.7L196.2,491.0L195.5,495.6L194.6,500.1L192.7,506.8L190.6,513.4L190.3,514.8L190.1,516.8L189.5,520.4L188.8,525.0L187.3,531.3L186.1,538.0L185.2,543.4L183.2,550.5L180.3,546.6L180.6,544.5L179.9,539.7L177.8,533.8L176.2,530.7L176.8,531.5L178.4,532.0L179.2,531.6L180.4,529.3L180.2,526.4L181.2,523.8L181.4,524.4L182.4,523.8L183.0,524.5L183.9,523.7L183.2,522.6L182.8,519.8L182.0,520.5L181.0,520.4L180.8,519.9L181.2,516.5L182.6,513.3L183.5,512.3L184.9,508.8L186.4,506.4L188.5,504.5L190.0,500.1L191.2,497.0L191.9,493.3L192.8,488.6L193.6,483.6L194.7,479.9L195.6,477.1L197.0,473.9Z" class="map-region"/>
-<text x="141.6" y="449.7" class="map-label">FYN</text>
-<path id="map-7" d="M46.1,422.9L35.4,407.4L31.4,399.9L30.2,404.7L31.6,411.2L26.2,409.0L24.9,381.2L29.4,359.1L57.3,353.9L76.5,355.7L102.2,344.5L110.7,367.0L114.4,378.9L119.7,383.8L127.9,392.6L124.8,403.9L118.1,411.4L112.1,410.8L111.3,415.5L114.0,416.8L114.1,430.5L112.6,438.2L116.6,448.0L115.5,453.2L109.3,458.4L112.5,458.4L117.4,453.4L120.2,463.0L119.7,465.0L116.1,470.4L108.6,474.7L105.6,482.6L108.3,494.8L108.9,499.3L120.8,504.6L124.4,515.8L123.4,531.1L115.4,520.2L114.4,516.8L106.8,529.5L78.2,522.6L55.3,500.3L57.9,477.4L49.9,485.4L44.9,476.3L56.2,460.9L55.9,452.2L48.3,454.4L56.4,442.3L54.8,433.4L46.4,423.1Z M123.3,488.0L128.0,491.8L131.0,497.0L137.4,503.0L139.1,506.0L141.8,514.4L142.3,519.7L142.3,524.7L138.9,527.4L134.1,527.4L131.5,523.0L133.7,522.7L136.7,525.8L138.5,528.0L137.3,523.4L136.1,521.9L133.9,519.9L131.8,519.8L128.7,522.1L127.0,521.0L124.9,517.0L124.4,514.2L124.3,510.9L123.7,506.5L126.3,508.6L127.8,512.6L128.9,514.4L130.3,513.3L130.7,512.6L129.2,512.2L130.2,510.9L129.1,510.8L129.6,508.6L130.0,508.0L129.8,507.9L129.1,507.5L127.7,506.1L125.7,504.2L126.3,503.4L125.8,502.3L124.5,500.8L121.2,501.4L119.6,500.5L118.4,497.5L120.8,496.1L121.3,496.6L120.7,495.4L118.1,495.8L117.5,493.1L123.0,488.0Z" class="map-region"/>
-<text x="49.3" y="390.9" class="map-label">SJYL</text>
-<path id="map-8" d="M136.6,356.9L141.9,358.3L140.1,366.5L140.1,377.4L133.9,381.3L119.7,378.4L113.5,365.9L104.6,352.7L102.6,345.5L108.4,343.7L107.6,331.0L113.7,315.9L127.0,298.5L125.3,289.8L122.7,275.6L120.6,264.0L126.4,228.9L146.1,217.9L155.8,205.3L158.0,220.2L153.4,229.9L151.9,244.3L141.5,247.3L153.8,244.9L152.8,243.1L153.9,231.3L159.6,222.3L161.7,229.7L177.3,235.6L194.2,242.9L188.2,283.7L180.9,300.1L175.2,288.9L170.2,297.6L163.9,291.0L166.8,287.1L164.8,276.5L160.4,284.0L157.3,289.2L152.7,298.2L152.1,303.2L154.4,311.2L154.0,323.3L154.9,340.8L151.6,352.2L145.3,348.0L138.7,348.4L135.0,351.6L131.5,353.0L132.3,354.9L136.6,356.9Z" class="map-region"/>
-<text x="179.6" y="259.9" class="map-label">ØJYL</text>
-<path id="map-9" d="M23.6,261.0L25.1,216.5L27.0,216.0L31.0,222.0L46.2,231.3L50.6,238.7L59.3,244.0L57.3,220.4L61.5,216.2L64.9,207.5L70.1,204.1L67.1,201.5L78.9,189.3L80.2,186.9L88.5,203.5L80.6,217.9L83.0,222.7L85.9,215.9L93.6,218.1L92.5,226.8L94.9,232.9L96.9,234.1L99.9,230.0L95.1,226.9L97.3,213.5L106.1,210.9L120.7,224.0L120.1,262.0L126.1,284.2L125.5,298.6L108.2,326.5L102.3,341.7L77.4,356.5L65.2,356.8L42.5,364.4L28.1,352.7L28.6,345.3L29.9,348.2L32.7,353.6L38.3,345.4L38.7,340.8L37.0,333.0L34.4,318.2L30.9,312.7L24.0,307.6L23.2,321.5L22.1,306.8L23.9,262.9L30.1,272.1L30.5,265.9L23.0,260.7Z" class="map-region"/>
-<text x="111.2" y="244.8" class="map-label">VJYL</text>
-<path id="map-10" d="M79.0,124.1L117.9,94.9L126.5,68.1L135.4,49.2L144.6,48.5L161.2,37.5L179.2,21.4L176.1,27.2L165.7,46.6L170.2,66.1L172.6,75.5L170.9,83.6L172.7,103.5L172.3,112.7L169.7,115.9L167.0,120.6L165.4,125.3L164.6,127.8L163.6,133.2L162.7,139.2L162.2,143.2L159.9,153.1L153.3,154.1L145.4,143.6L138.1,136.9L135.6,142.2L127.8,135.1L124.3,138.2L117.5,137.5L119.7,135.0L115.9,137.3L113.1,144.4L105.7,144.8L97.1,149.3L89.4,150.6L86.6,146.8L75.3,150.8L71.6,155.5L66.8,153.1L58.4,160.2L53.8,177.4L44.6,190.9L46.8,201.9L45.5,206.6L37.5,208.6L31.1,194.7L29.3,199.7L38.9,158.6L52.0,130.7L60.7,134.3L78.9,124.1Z M110.2,209.6L105.4,214.9L96.6,207.2L89.1,209.4L89.9,203.4L89.4,192.8L90.2,175.6L91.4,160.7L94.8,154.7L102.5,149.4L109.1,149.9L112.2,157.3L110.5,160.2L112.6,164.7L114.8,158.1L117.3,152.8L120.4,144.8L127.8,143.9L133.3,141.9L140.9,139.8L145.5,146.7L151.6,154.7L155.7,155.2L157.5,156.9L156.5,159.8L155.9,162.5L155.3,169.4L155.5,172.1L155.5,173.9L155.7,178.5L156.2,186.4L157.6,195.6L159.1,203.7L154.4,202.2L151.4,203.6L146.6,201.7L143.7,205.7L139.1,207.9L136.0,210.4L131.9,213.3L127.6,215.2L133.9,214.2L140.7,209.5L144.4,207.3L146.0,203.2L149.0,203.5L150.4,209.2L139.6,222.8L124.3,229.9L117.8,225.2L110.4,210.4Z M73.5,154.9L71.9,162.4L71.3,171.0L70.3,174.5L69.9,172.6L69.1,173.1L69.4,173.7L68.9,172.2L67.6,173.1L66.8,174.6L67.4,178.7L69.7,187.0L69.6,189.5L68.7,188.5L68.9,189.5L68.0,191.1L67.3,194.6L66.7,197.8L63.8,202.2L63.5,205.5L60.4,207.9L55.4,209.9L54.8,207.5L54.8,206.7L54.6,207.5L54.1,204.7L53.4,202.3L53.4,201.2L52.5,201.5L51.5,199.9L51.8,200.8L51.8,203.3L50.1,202.9L50.8,199.6L48.6,198.2L47.0,200.4L47.2,196.4L49.5,194.9L49.7,192.0L49.8,189.3L54.1,188.4L56.4,184.1L53.7,181.6L54.6,180.0L55.6,175.3L57.3,171.5L64.1,169.3L67.4,162.9L69.8,160.6L72.3,158.0L73.3,154.8Z" class="map-region"/>
-<text x="144.0" y="70.1" class="map-label">NJYL</text>
-        </svg>
-    </div>
-
-    <div class="section-h">Optalte stemmer</div>
-    <div class="chart-wrap">
-        <div class="chart-box"><canvas id="seatChart"></canvas></div>
-    </div>
-
-    <div class="section-h">Live feed</div>
-    <div class="feed" id="feed"></div>
-
-</div>
-</div>
-
-<!-- POPUP CONTAINER -->
-<div class="popup-container" id="popups"></div>
-
-<!-- COUNTDOWN RING -->
-<div class="update-ring" id="updateRing">
-    <svg width="54" height="54" viewBox="0 0 54 54">
-        <circle class="bg" cx="27" cy="27" r="22"/>
-        <circle class="fg" id="ringCircle" cx="27" cy="27" r="22"/>
-    </svg>
-    <div class="ur-text" id="ringText">10</div>
-</div>
-
-<!-- FLOATING VOTE COUNTER -->
-<div class="float-counter" id="floatCounter">
-    <div class="fc-label">Stemmer talt</div>
-    <div class="fc-value" id="fcValue">0</div>
-    <div class="fc-sub" id="fcSub">venter på data</div>
-</div>
-
-<!-- CONFETTI CONTAINER -->
-<div class="confetti-container" id="confettiBox"></div>
+<div class="popup-box" id="popups"></div>
 
 <script>
-// ====== CONFIG ======
-var DR = 'https://firestore.googleapis.com/v1/projects/drdk-portal-valhal-prod/databases/(default)/documents/';
-var INTERVAL = 10000; // 10 sekunder
-var redBloc = ['A','F','Ø','B','Å'];
-var blueBloc = ['V','I','C','Æ','O','Q','H'];
-var skNames = ['København','Kbh. Omegn','Nordsjælland','Bornholm','Sjælland','Fyn','Sydjylland','Østjylland','Vestjylland','Nordjylland'];
+var DR='https://firestore.googleapis.com/v1/projects/drdk-portal-valhal-prod/databases/(default)/documents/';
+var INTERVAL=10000;
+var redB=['A','F','Ø','B','Å'],blueB=['V','I','C','Æ','O','H'];
+var skNames=['København','Kbh. Omegn','Nordsjælland','Bornholm','Sjælland','Fyn','Sydjylland','Østjylland','Vestjylland','Nordjylland'];
+var fv22={A:27.5,B:3.8,C:5.4,F:8.3,I:7.9,M:9.3,O:2.6,V:13.3,'Æ':8.1,'Ø':5.1,'Å':3.3,H:3.7};
 
-var parties = [
-    {id:'A',name:'Socialdemokratiet',color:'#c8102e',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'F',name:'SF',color:'#e4007e',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'I',name:'Liberal Alliance',color:'#00bce4',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'V',name:'Venstre',color:'#0054a0',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'M',name:'Moderaterne',color:'#8b5cf6',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'Æ',name:'Danmarksdemokraterne',color:'#0f4d3a',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'O',name:'Dansk Folkeparti',color:'#e4d600',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'C',name:'Konservative',color:'#00583c',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'B',name:'Radikale Venstre',color:'#e4007e',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'Ø',name:'Enhedslisten',color:'#e6801a',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'Å',name:'Alternativet',color:'#2dc84d',pct:0,seats:0,votes:0,prevPct:0},
-    {id:'H',name:'Borgernes Parti',color:'#1e3a5f',pct:0,seats:0,votes:0,prevPct:0},
+var parties=[
+    {id:'A',name:'Socialdemokratiet',color:'#c8102e',pct:0,seats:0,votes:0,prev:0},
+    {id:'F',name:'SF',color:'#e4007e',pct:0,seats:0,votes:0,prev:0},
+    {id:'I',name:'Liberal Alliance',color:'#00bce4',pct:0,seats:0,votes:0,prev:0},
+    {id:'V',name:'Venstre',color:'#0054a0',pct:0,seats:0,votes:0,prev:0},
+    {id:'M',name:'Moderaterne',color:'#8b5cf6',pct:0,seats:0,votes:0,prev:0},
+    {id:'Æ',name:'Danmarksdem.',color:'#0f4d3a',pct:0,seats:0,votes:0,prev:0},
+    {id:'O',name:'Dansk Folkeparti',color:'#e4d600',pct:0,seats:0,votes:0,prev:0},
+    {id:'C',name:'Konservative',color:'#00583c',pct:0,seats:0,votes:0,prev:0},
+    {id:'Ø',name:'Enhedslisten',color:'#e6801a',pct:0,seats:0,votes:0,prev:0},
+    {id:'B',name:'Radikale Venstre',color:'#e4007e',pct:0,seats:0,votes:0,prev:0},
+    {id:'Å',name:'Alternativet',color:'#2dc84d',pct:0,seats:0,votes:0,prev:0},
+    {id:'H',name:'Borgernes Parti',color:'#1e3a5f',pct:0,seats:0,votes:0,prev:0},
 ];
 
-var feedItems = [];
-var prevResultType = '';
-var prevCountedPct = 0;
-var totalPollingDone = 0;
+var feedItems=[];
+var knownVS={};
+var prevCounted=0;
+var prevBlocLead='';
 
-// ====== HELPERS ======
-function exf(fields,key){
-    if(!fields||!fields[key])return null;
-    var v=fields[key];
-    if(v.stringValue!==undefined)return v.stringValue;
-    if(v.integerValue!==undefined)return Number(v.integerValue);
-    if(v.doubleValue!==undefined)return v.doubleValue;
-    if(v.arrayValue)return v.arrayValue.values||[];
-    if(v.mapValue)return v.mapValue.fields;
-    return null;
-}
-
+function exf(f,k){if(!f||!f[k])return null;var v=f[k];if(v.stringValue!==undefined)return v.stringValue;if(v.integerValue!==undefined)return Number(v.integerValue);if(v.doubleValue!==undefined)return v.doubleValue;if(v.arrayValue)return v.arrayValue.values||[];if(v.mapValue)return v.mapValue.fields;return null}
 function fmt(n){return n.toLocaleString('da-DK')}
 function ts(){return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 
-// ====== BUILD UI ======
 // Clock
-function tickClock(){document.getElementById('clock').textContent=ts()}
-tickClock();setInterval(tickClock,1000);
+setInterval(function(){document.getElementById('clock').textContent=ts()},1000);
 
-// Party table
-var ptEl=document.getElementById('partyTable');
+// Build party table
+var pT=document.getElementById('pTable');
 parties.forEach(function(p){
-    var row=document.createElement('div');
-    row.className='pt-row';row.id='pt-'+p.id;
-    row.innerHTML='<div class="pt-letter" style="background:'+p.color+'">'+p.id+'</div>'+
-        '<div class="pt-name">'+p.name+'</div>'+
-        '<div class="pt-bar"><div class="pt-bar-fill" style="width:0%;background:'+p.color+';opacity:.8"></div></div>'+
-        '<div class="pt-pct" style="color:'+p.color+'">–</div>'+
-        '<div class="pt-change neutral">–</div>'+
-        '<div class="pt-seats">–</div>'+
-        '<div class="pt-votes"></div>'+
-        '<div class="pt-vs22" style="width:55px;text-align:right;font-size:10px;flex-shrink:0;font-variant-numeric:tabular-nums;color:#5a6280">FV22</div>';
-    ptEl.appendChild(row);
+    var r=document.createElement('div');r.className='p-row';r.id='pr-'+p.id;
+    r.innerHTML='<div class="p-let" style="background:'+p.color+'">'+p.id+'</div><div class="p-name">'+p.name+'</div><div class="p-bar"><div class="p-bar-fill" style="width:0%;background:'+p.color+'"></div></div><div class="p-pct" style="color:'+p.color+'">–</div><div class="p-votes"></div><div class="p-diff flat">–</div><div class="p-seats">–</div>';
+    pT.appendChild(r);
 });
 
-// Storkredse
-var skEl=document.getElementById('skGrid');
-for(var i=0;i<10;i++){
-    var s=document.createElement('div');
-    s.className='sk-item';s.id='ski-'+(i+1);
-    s.innerHTML='<div class="sk-n">'+skNames[i]+'</div><div class="sk-b"><div class="sk-bf" style="width:0%"></div></div><div class="sk-p">0%</div>';
-    skEl.appendChild(s);
-}
+// Build storkredse
+var skG=document.getElementById('skGrid');
+for(var i=0;i<10;i++){var s=document.createElement('div');s.className='sk';s.id='sk-'+(i+1);s.innerHTML='<div class="sk-name">'+skNames[i]+'</div><div class="sk-bar"><div class="sk-bf" style="width:0%"></div></div><div class="sk-pct">0%</div>';skG.appendChild(s)}
 
-// Seat chart
+// Chart
 Chart.defaults.color='#5a6280';Chart.defaults.borderColor='#141c2a';Chart.defaults.font.family="'DM Sans',sans-serif";
-var seatChart=new Chart(document.getElementById('seatChart'),{
-    type:'doughnut',
-    data:{labels:parties.map(function(p){return p.id}),datasets:[{data:parties.map(function(){return 0}),backgroundColor:parties.map(function(p){return p.color}),borderWidth:2,borderColor:'#0c1018'}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' mandater'}}}}},
-    plugins:[{id:'ct',afterDraw:function(ch){var ctx=ch.ctx,a=ch.chartArea,cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';var total=0;parties.forEach(function(p){total+=p.votes});ctx.font="bold 18px 'DM Sans'";ctx.fillStyle='#fff';ctx.fillText(total>0?fmt(total):'–',cx,cy-6);ctx.font="10px 'DM Sans'";ctx.fillStyle='#5a6280';ctx.fillText(total>0?'stemmer':'venter',cx,cy+12);ctx.restore()}}]
-});
+var vChart=new Chart(document.getElementById('voteChart'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderWidth:2,borderColor:'#0c1018'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+fmt(c.raw)+' stemmer'}}}}}});
 
-// ====== FEED ======
-function addFeed(text,breaking){
-    feedItems.unshift({text:text,time:ts(),breaking:!!breaking});
-    if(feedItems.length>30)feedItems.pop();
-    renderFeed();
-}
+// Feed
+function addFeed(txt,brk){feedItems.unshift({t:txt,time:ts(),b:!!brk});if(feedItems.length>50)feedItems.length=50;var el=document.getElementById('feed');var d=document.createElement('div');d.className='fi'+(brk?' breaking':'');d.innerHTML='<div class="fi-time">'+ts()+'</div><div class="fi-text">'+txt+'</div>';el.insertBefore(d,el.firstChild);if(el.children.length>30)el.removeChild(el.lastChild)}
 
-function renderFeed(){
-    var el=document.getElementById('feed');
-    el.innerHTML='';
-    feedItems.slice(0,15).forEach(function(f){
-        var d=document.createElement('div');
-        d.className='feed-item'+(f.breaking?' breaking':'');
-        d.innerHTML=(f.breaking?'<div class="fi-label">Breaking</div>':'')+
-            '<div class="fi-time">'+f.time+'</div>'+
-            '<div class="fi-text">'+f.text+'</div>';
-        el.appendChild(d);
-    });
-}
+// Popup
+function showPopup(title,detail){var c=document.getElementById('popups');var el=document.createElement('div');el.className='popup';el.innerHTML='<div class="popup-tag">Valgsted optalt</div><div class="popup-title">'+title+'</div>'+(detail?'<div class="popup-detail">'+detail+'</div>':'')+'<div class="popup-bar"><div class="popup-bar-fill"></div></div>';c.appendChild(el);setTimeout(function(){el.classList.add('exit');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},300)},5000);var all=c.querySelectorAll('.popup:not(.exit)');if(all.length>5){all[0].classList.add('exit');setTimeout(function(){if(all[0].parentNode)all[0].parentNode.removeChild(all[0])},300)}}
 
-addFeed('Dashboard startet – henter data fra DR hvert 10. sekund');
+addFeed('Dashboard startet – henter data hvert 10. sekund');
 
-// ====== ADHD FEATURES ======
-var prevTotalVotes=0;
-var updateCountdown=10;
-
-// Countdown ring
-function tickRing(){
-    updateCountdown--;
-    if(updateCountdown<0)updateCountdown=10;
-    var circ=138.2;
-    document.getElementById('ringCircle').style.strokeDashoffset=circ*(1-updateCountdown/10);
-    document.getElementById('ringText').textContent=updateCountdown;
-}
-setInterval(tickRing,1000);
-
-// Confetti burst
-function fireConfetti(count,colors){
-    var box=document.getElementById('confettiBox');
-    for(var i=0;i<count;i++){
-        var c=document.createElement('div');
-        c.className='confetti';
-        c.style.left=Math.random()*100+'%';
-        c.style.background=colors[Math.floor(Math.random()*colors.length)];
-        c.style.animationDuration=(1.5+Math.random()*2)+'s';
-        c.style.animationDelay=(Math.random()*0.5)+'s';
-        c.style.width=(4+Math.random()*8)+'px';
-        c.style.height=(4+Math.random()*8)+'px';
-        box.appendChild(c);
-        setTimeout(function(el){if(el.parentNode)el.parentNode.removeChild(el)},4000,c);
-    }
-}
-
-// Vote particle effect
-function spawnVoteParticle(text){
-    var el=document.createElement('div');
-    el.className='vote-particle';
-    el.textContent=text;
-    el.style.left=(20+Math.random()*60)+'%';
-    el.style.top=(10+Math.random()*30)+'%';
-    document.body.appendChild(el);
-    // Fly towards counter
-    var counter=document.getElementById('floatCounter').getBoundingClientRect();
-    el.style.transition='all 1.5s ease-in';
-    requestAnimationFrame(function(){
-        el.style.left=counter.left+'px';
-        el.style.top=counter.top+'px';
-    });
-    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},1600);
-}
-
-// Animate number counting up
-function animateValue(el,start,end,duration){
-    var range=end-start;
-    var startTime=null;
-    function step(ts){
-        if(!startTime)startTime=ts;
-        var progress=Math.min((ts-startTime)/duration,1);
-        var val=Math.floor(start+range*progress);
-        el.textContent=fmt(val);
-        if(progress<1)requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-}
-
-// Random fun facts ticker between updates
-var funFacts=[
-    'Vidste du? Spærregrænsen har eksisteret siden 1920',
-    'Fun fact: Folketinget har 179 pladser – 175 i DK + 4 fra Grønland/Færøerne',
-    'Vidste du? Den gennemsnitlige valgdeltagelse i DK er ~85%',
-    'Fun fact: Danmarks yngste statsminister var 32 år gammel',
-    'Vidste du? Et folketingsvalg skal holdes mindst hvert 4. år',
-    'Fun fact: Der er ca. 1.400 valgsteder i hele Danmark',
-    'Vidste du? Brevstemmer tælles først på valgdagen',
-    'Fun fact: Valgplakater må hænges op 3 uger før valg',
-];
-var factIdx=0;
-setInterval(function(){
-    addFeed('💡 '+funFacts[factIdx%funFacts.length]);
-    factIdx++;
-},45000);
-
-// ====== POPUPS ======
-var popupQueue=[];
-var popupActive=0;
-var MAX_POPUPS=6;
-
-function showPopup(opts){
-    // opts: {type, icon, tag, title, detail, duration, mega}
-    if(opts.mega){
-        showMegaFlash(opts);
-        return;
-    }
-    var container=document.getElementById('popups');
-    var el=document.createElement('div');
-    el.className='popup '+opts.type;
-    el.innerHTML=
-        '<div class="pop-icon">'+opts.icon+'</div>'+
-        '<div class="pop-tag">'+opts.tag+'</div>'+
-        '<div class="pop-title">'+opts.title+'</div>'+
-        (opts.detail?'<div class="pop-detail">'+opts.detail+'</div>':'')+
-        '<div class="pop-time">'+ts()+'</div>'+
-        '<div class="pop-progress"><div class="pop-progress-fill"></div></div>';
-
-    container.appendChild(el);
-    popupActive++;
-
-    // Pulse header
-    document.querySelector('.top-bar').classList.add('pulse-ring');
-    setTimeout(function(){document.querySelector('.top-bar').classList.remove('pulse-ring')},1000);
-
-    var dur=opts.duration||6000;
-    setTimeout(function(){
-        el.classList.add('exit');
-        setTimeout(function(){
-            if(el.parentNode)el.parentNode.removeChild(el);
-            popupActive--;
-        },400);
-    },dur);
-
-    // Max popups
-    var all=container.querySelectorAll('.popup:not(.exit)');
-    if(all.length>MAX_POPUPS){
-        all[0].classList.add('exit');
-        setTimeout(function(){if(all[0].parentNode)all[0].parentNode.removeChild(all[0])},400);
-    }
-}
-
-function showMegaFlash(opts){
-    var el=document.createElement('div');
-    el.className='mega-flash '+(opts.bg||'gold-bg');
-    el.innerHTML=
-        '<div>'+
-        '<div class="mf-icon">'+opts.icon+'</div>'+
-        '<div class="mf-title">'+opts.title+'</div>'+
-        (opts.detail?'<div class="mf-sub">'+opts.detail+'</div>':'')+
-        '</div>';
-    document.body.appendChild(el);
-    setTimeout(function(){el.classList.add('exit')},3500);
-    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},4300);
-}
-
-// ====== FV2022 RESULTATER (sammenligning) ======
-var fv2022={A:27.5,B:3.8,C:5.4,F:8.3,I:7.9,M:9.3,O:2.6,V:13.3,'Æ':8.1,'Ø':5.1,'Å':3.3,H:3.7};
-
-// Track previous bloc lead
-var prevBlocLead='';
-var prevPartyOrder=[];
-var prevSpærre={};
-parties.forEach(function(p){prevSpærre[p.id]=true});
-
-// ====== VALGSTED SCANNING ======
-var knownValgsteder={};
-var valgstedQueue=[];  // queue popups so they don't all fire at once
-var valgstedCount=0;
-var MAX_POPUP_BURST=5; // max popups per scan cycle
-
-// Alle kommunekoder per storkreds (bruges til at bygge valgsted-URLs)
-var storkredsKommuner={
-    1:['0101','0147','0155','0185'], // København
-    2:['0151','0153','0157','0159','0161','0163','0165','0167','0169','0173','0175','0183','0187','0190'], // Kbh omegn
-    3:['0201','0210','0217','0219','0223','0230','0240','0250','0260','0270'], // Nordsjælland
-    4:['0400'], // Bornholm
-    5:['0253','0259','0265','0269','0306','0316','0320','0326','0329','0330','0336','0340','0350','0360','0370','0376','0390'], // Sjælland
-    6:['0410','0420','0430','0440','0450','0461','0479','0480','0482','0492'], // Fyn
-    7:['0510','0530','0540','0550','0561','0563','0573','0575','0580','0607','0621','0630'], // Sydjylland
-    8:['0615','0657','0661','0665','0706','0707','0710','0727','0730','0740','0741','0746','0751','0756'], // Østjylland
-    9:['0657','0660','0671','0706','0756','0760','0766','0779','0791'], // Vestjylland
-   10:['0773','0787','0810','0813','0820','0825','0840','0846','0849','0851','0860'] // Nordjylland
-};
-
-// Track which kommuner we've scanned
-var scannedPages={};
-
-function parseValgsted(f){
-    var id=exf(f,'Id')||exf(f,'GeographyKey')||'';
-    var name=exf(f,'FullGeographyName')||exf(f,'GeographyName')||id;
-    var rType=exf(f,'ResultType')||'Setup';
-    var votes=exf(f,'TotalReceivedVotes')||0;
-    var leading=exf(f,'LeadingPartyLetter')||'';
-
-    if(!id||rType==='Setup'||knownValgsteder[id])return null;
-
-    knownValgsteder[id]=true;
-    valgstedCount++;
-
-    // Byg parti-resultat sammenligning med FV2022
-    var pr=exf(f,'PartyResults');
-    var partyLines=[];
-    var comparison='';
-    var topParty='';var topPct=0;
-    if(pr&&Array.isArray(pr)){
-        var topChanges=[];
-        pr.forEach(function(entry){
-            var ef=entry.mapValue?entry.mapValue.fields:null;
-            if(!ef)return;
-            var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;
-            var letter=exf(pf,'Letter')||exf(ef,'Letter');
-            var pct=exf(ef,'VotesSharePct')||0;
-            var v=exf(ef,'Votes')||0;
-            if(letter&&pct>0){
-                if(pct>topPct){topPct=pct;topParty=letter}
-                partyLines.push(letter+' '+pct.toFixed(1)+'%');
-                if(fv2022[letter]!==undefined){
-                    var diff=pct-fv2022[letter];
-                    if(Math.abs(diff)>=1.5){
-                        topChanges.push('<b>'+letter+'</b> '+(diff>0?'<span style="color:#2dc84d">+':'<span style="color:#e84060">')+diff.toFixed(1)+'</span>');
-                    }
-                }
-            }
-        });
-        if(topChanges.length>0)comparison=topChanges.join(' · ')+' vs FV22';
-    }
-
-    return{
-        id:id, name:name, votes:votes, leading:topParty||leading,
-        partyLines:partyLines.slice(0,6).join(' · '),
-        comparison:comparison, topPct:topPct
-    };
-}
-
-async function scanValgsteder(){
-    var newSteder=[];
-
-    // Metode 1: Structured query (hent nyeste med resultater)
-    try{
-        var body={structuredQuery:{
-            from:[{collectionId:'FV2026-geography-results'}],
-            where:{compositeFilter:{op:'AND',filters:[
-                {fieldFilter:{field:{fieldPath:'GeographyType'},op:'EQUAL',value:{stringValue:'AfstemningsOmraade'}}},
-                {fieldFilter:{field:{fieldPath:'ResultType'},op:'NOT_EQUAL',value:{stringValue:'Setup'}}}
-            ]}},
-            orderBy:[{field:{fieldPath:'ResultType'},direction:'ASCENDING'},{field:{fieldPath:'DocumentUpdated'},direction:'DESCENDING'}],
-            limit:100
-        }};
-        var res=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-        if(res.ok){
-            var data=await res.json();
-            if(Array.isArray(data)){
-                data.forEach(function(item){
-                    if(!item.document)return;
-                    var v=parseValgsted(item.document.fields);
-                    if(v)newSteder.push(v);
-                });
-            }
-        }
-    }catch(e){}
-
-    // Metode 2: Direkte scan af kendte valgsted-IDs (backup)
-    // Scan storkredse der har CountedPct > 0 og hent deres valgsteder
-    for(var si=1;si<=10;si++){
-        var ski=document.getElementById('ski-'+si);
-        if(!ski||!ski.dataset.started)continue;
-        var kommuner=storkredsKommuner[si]||[];
-        for(var ki=0;ki<kommuner.length;ki++){
-            var komKey=kommuner[ki];
-            // Scan first 30 valgsteder per kommune
-            for(var vi=1;vi<=30;vi++){
-                var vsId='afstemningsomraade-'+komKey+'-'+vi;
-                if(knownValgsteder[vsId])continue;
-                // Don't fetch too many at once
-                if(newSteder.length>=20)break;
-                try{
-                    var vr=await fetch(DR+'FV2026-geography-results/'+vsId);
-                    if(!vr.ok){break;} // no more in this kommune
-                    var vj=await vr.json();
-                    var parsed=parseValgsted(vj.fields);
-                    if(parsed)newSteder.push(parsed);
-                }catch(e){break;}
-            }
-            if(newSteder.length>=20)break;
-        }
-        if(newSteder.length>=20)break;
-    }
-
-    // Queue alle nye valgsteder for popups (staggered)
-    if(newSteder.length>0){
-        // Show burst of popups staggered
-        var shown=0;
-        newSteder.forEach(function(v,idx){
-            setTimeout(function(){
-                // Popup
-                var partyColor='#5a6280';
-                var p=parties.find(function(pp){return pp.id===v.leading});
-                if(p)partyColor=p.color;
-
-                var detail='<span style="color:'+partyColor+';font-weight:800">'+v.leading+' '+v.topPct.toFixed(1)+'%</span> · '+fmt(v.votes)+' stemmer';
-                if(v.partyLines)detail+='<br><span style="font-size:10px;color:#5a6280">'+v.partyLines+'</span>';
-                if(v.comparison)detail+='<br>'+v.comparison;
-
-                showPopup({type:'storkreds',icon:'🗳️',tag:'Valgsted #'+valgstedCount+' optalt',title:v.name,detail:detail,duration:5000});
-                addFeed('🗳️ <b>'+v.name+'</b> – '+v.leading+' '+v.topPct.toFixed(1)+'% · '+fmt(v.votes)+' st.');
-                spawnVoteParticle('🗳️');
-
-                // Every 10th valgsted, do a mini celebration
-                if(valgstedCount%10===0){
-                    showPopup({type:'milestone',icon:'🎯',tag:valgstedCount+' valgsteder!',title:valgstedCount+' valgsteder optalt',detail:'Stemmerne vælter ind!',duration:4000});
-                    fireConfetti(20,['#ffd15c','#e84060','#4a90d9','#2dc84d']);
-                }
-                // Every 50th
-                if(valgstedCount%50===0){
-                    showPopup({mega:true,icon:'🔥',bg:'gold-bg',title:valgstedCount+' VALGSTEDER!',detail:'Optællingen kører for fuld kraft'});
-                }
-                // Every 100th
-                if(valgstedCount%100===0){
-                    showPopup({mega:true,icon:'🚀',bg:'gold-bg',title:valgstedCount+' VALGSTEDER OPTALT!',detail:'Det er vildt!'});
-                    fireConfetti(100,['#ffd15c','#c8102e','#4a90d9','#2dc84d','#a78bfa','#fff']);
-                }
-
-            },idx*800); // 800ms mellem hver popup
-        });
-    }
-}
-
-// ====== LIVE FETCH ======
+// ====== MAIN FETCH ======
 async function fetchAll(){
     try{
-        // Hent RIGTIGE stemmer fra optalte valgsteder (ikke exit poll)
-        var realRes=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'FV2026-geography-results'}],where:{compositeFilter:{op:'AND',filters:[{fieldFilter:{field:{fieldPath:'TotalReceivedVotes'},op:'GREATER_THAN',value:{integerValue:'0'}}},{fieldFilter:{field:{fieldPath:'GeographyType'},op:'EQUAL',value:{stringValue:'VotingArea'}}}]}},limit:500,orderBy:[{field:{fieldPath:'TotalReceivedVotes'},direction:'DESCENDING'}]}})});
+        // 1) National status
+        var r1=await fetch(DR+'FV2026-geography-results/land-dk');
+        if(!r1.ok)throw new Error('HTTP '+r1.status);
+        var nat=await r1.json();
+        var nf=nat.fields;
+        var countedPct=exf(nf,'CountedPct')||0;
+        var natType=exf(nf,'ResultType')||'Setup';
 
-        var realPartyVotes={};
-        var realTotalVotes=0;
-        var realStederCount=0;
+        document.getElementById('cPct').textContent=countedPct.toFixed(2).replace('.',',')+' %';
+        document.getElementById('cBar').style.width=Math.min(countedPct,100)+'%';
+        document.getElementById('lastUp').textContent=ts();
 
-        if(realRes.ok){
-            var realData=await realRes.json();
-            if(Array.isArray(realData)){
-                realData.forEach(function(item){
-                    if(!item.document)return;
-                    var f2=item.document.fields;
-                    var v2=parseInt(exf(f2,'TotalReceivedVotes')||'0');
-                    if(v2<=0)return;
-                    realTotalVotes+=v2;
-                    realStederCount++;
-                    var pr2=exf(f2,'PartyResults');
-                    if(pr2&&Array.isArray(pr2)){
-                        pr2.forEach(function(entry){
-                            var ef2=entry.mapValue?entry.mapValue.fields:null;
-                            if(!ef2)return;
-                            var pf2=ef2.Party?(ef2.Party.mapValue?ef2.Party.mapValue.fields:ef2):ef2;
-                            var letter=exf(pf2,'Letter')||exf(ef2,'Letter');
-                            var pv=parseInt(exf(ef2,'Votes')||'0');
-                            if(letter&&pv>0) realPartyVotes[letter]=(realPartyVotes[letter]||0)+pv;
-                        });
+        // Milestones
+        if(countedPct>=25&&prevCounted<25)addFeed('🎯 <b>25% optalt!</b>',true);
+        if(countedPct>=50&&prevCounted<50)addFeed('⚡ <b>50% optalt – halvvejs!</b>',true);
+        if(countedPct>=75&&prevCounted<75)addFeed('🔥 <b>75% optalt!</b>',true);
+        if(countedPct>=95&&prevCounted<95)addFeed('🏁 <b>95% optalt!</b>',true);
+        prevCounted=countedPct;
+
+        // 2) Hent RIGTIGE stemmer fra optalte valgsteder
+        var r2=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'FV2026-geography-results'}],where:{fieldFilter:{field:{fieldPath:'TotalReceivedVotes'},op:'GREATER_THAN',value:{integerValue:'0'}}},limit:500,orderBy:[{field:{fieldPath:'TotalReceivedVotes'},direction:'DESCENDING'}]}})});
+
+        var realVotes={};var realTotal=0;var realCount=0;var newVS=[];
+        if(r2.ok){
+            var rd=await r2.json();
+            if(Array.isArray(rd)){rd.forEach(function(item){
+                if(!item.document)return;
+                var ff=item.document.fields;
+                var gt=exf(ff,'GeographyType')||'';
+                if(gt!=='VotingArea'&&gt!=='NominatingDistrict')return;
+                var v=exf(ff,'TotalReceivedVotes')||0;
+                if(v<=0)return;
+                // Only count VotingAreas to avoid double counting
+                if(gt==='VotingArea'){
+                    realTotal+=v;realCount++;
+                    var pr=exf(ff,'PartyResults');
+                    if(pr&&Array.isArray(pr)){pr.forEach(function(e){var ef=e.mapValue?e.mapValue.fields:null;if(!ef)return;var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;var let2=exf(pf,'Letter')||exf(ef,'Letter');var pv=exf(ef,'Votes')||0;if(let2&&pv>0)realVotes[let2]=(realVotes[let2]||0)+pv})}
+                    // New valgsted popup
+                    var vsId=exf(ff,'Id')||exf(ff,'GeographyKey')||'';
+                    if(vsId&&!knownVS[vsId]){
+                        knownVS[vsId]=true;
+                        var vsName=exf(ff,'FullGeographyName')||exf(ff,'GeographyName')||vsId;
+                        var leading=exf(ff,'LeadingPartyLetter')||'';
+                        newVS.push({name:vsName,votes:v,leading:leading});
                     }
-                    // Track valgsted for popup
-                    var vsId=exf(f2,'Id')||exf(f2,'GeographyKey')||'';
-                    var vsName=exf(f2,'FullGeographyName')||exf(f2,'GeographyName')||vsId;
-                    if(vsId&&!knownValgsteder[vsId]){
-                        knownValgsteder[vsId]=true;
-                        valgstedCount++;
-                        var leading=exf(f2,'LeadingPartyLetter')||'';
-                        var votes=v2;
-                        setTimeout(function(){
-                            var p3=parties.find(function(pp){return pp.id===leading});
-                            var clr=p3?p3.color:'#5a6280';
-                            showPopup({type:'storkreds',icon:'🗳️',tag:'Valgsted #'+valgstedCount,title:vsName,detail:'<span style="color:'+clr+';font-weight:800">'+leading+'</span> størst · '+fmt(votes)+' stemmer',duration:4000});
-                            addFeed('🗳️ <b>'+vsName+'</b> optalt – '+leading+' størst · '+fmt(votes)+' st.');
-                            spawnVoteParticle('🗳️');
-                        },(valgstedCount%10)*600);
-                    }
-                });
-            }
+                }
+            })}
         }
 
-        // National status (for CountedPct)
-        var res=await fetch(DR+'FV2026-geography-results/land-dk');
-        if(!res.ok)throw new Error('HTTP '+res.status);
-        var json=await res.json();
-        var f=json.fields;
+        // Show new valgsted popups (staggered)
+        newVS.slice(0,8).forEach(function(vs,i){
+            setTimeout(function(){
+                var pc=parties.find(function(p){return p.id===vs.leading});
+                var clr=pc?pc.color:'#5a6280';
+                showPopup(vs.name,'<span style="color:'+clr+'">'+vs.leading+'</span> størst · '+fmt(vs.votes)+' stemmer');
+                addFeed('🗳️ <b>'+vs.name+'</b> – '+vs.leading+' størst · '+fmt(vs.votes)+' st.');
+            },i*700);
+        });
+        if(newVS.length>8)addFeed('🗳️ ...og '+( newVS.length-8)+' flere valgsteder optalt');
 
-        var countedPct=exf(f,'CountedPct')||0;
-        var resultType=realTotalVotes>0?'LIVE':'ExitPoll';
+        document.getElementById('cDetail').textContent=realCount+' valgsteder · '+fmt(realTotal)+' stemmer';
 
-        // Reset countdown
-        updateCountdown=10;
-
-        // Status
-        document.getElementById('csPct').textContent=countedPct.toFixed(2).replace('.',',')+' %';
-        document.getElementById('csBar').style.width=countedPct+'%';
-        document.getElementById('topCounted').textContent=countedPct.toFixed(2).replace('.',',')+' %';
-        document.querySelector('.top-bar').classList.add('new-data');
-        setTimeout(function(){document.querySelector('.top-bar').classList.remove('new-data')},600);
-
-        document.getElementById('topType').textContent=realTotalVotes>0?'LIVE DATA · '+fmt(realTotalVotes)+' stemmer · '+realStederCount+' valgsteder':'EXIT POLL';
-        document.getElementById('topType').style.color=realTotalVotes>0?'#2dc84d':'#e84060';
-
-        var typeMap={'Setup':'VENTER','ExitPoll':'EXIT POLL','Preliminary':'FORELØBIG','Final':'ENDELIGT','LIVE':'LIVE DATA'};
-
-        // Feed + Popup: type change
-        if(resultType!==prevResultType&&prevResultType!==''){
-            addFeed('Status skifter til <b>'+(typeMap[resultType]||resultType)+'</b>',true);
-            if(resultType==='Preliminary'){
-                showPopup({type:'breaking',icon:'📊',tag:'Status ændret',title:'Foreløbige resultater',detail:'De første rigtige stemmetal er nu i gang med at tikke ind!',duration:8000});
-            }else if(resultType==='Final'){
-                showPopup({mega:true,icon:'🏛️',bg:'gold-bg',title:'ENDELIGT RESULTAT',detail:'Alle stemmer er talt op!'});
-            }
-        }
-        prevResultType=resultType;
-
-        // Feed + Popup: counting milestones
-        if(countedPct>=10&&prevCountedPct<10){addFeed('<b>10%</b> optalt',true);showPopup({type:'milestone',icon:'📈',tag:'Milepæl',title:'10% optalt',detail:'De første tendenser tegner sig'});}
-        if(countedPct>=25&&prevCountedPct<25){addFeed('<b>25%</b> optalt',true);showPopup({type:'milestone',icon:'📊',tag:'Milepæl',title:'25% optalt',detail:'En fjerdedel af stemmerne er talt'});}
-        if(countedPct>=50&&prevCountedPct<50){addFeed('<b>50%</b> optalt – halvvejs!',true);showPopup({mega:true,icon:'⚡',bg:'gold-bg',title:'HALVVEJS!',detail:'50% af stemmerne er nu talt op'});fireConfetti(80,['#ffd15c','#e84060','#4a90d9','#2dc84d','#fff']);}
-        if(countedPct>=75&&prevCountedPct<75){addFeed('<b>75%</b> optalt',true);showPopup({type:'milestone',icon:'🔥',tag:'Slutspurt',title:'75% optalt!',detail:'Kun en fjerdedel tilbage',duration:8000});}
-        if(countedPct>=90&&prevCountedPct<90){addFeed('<b>90%</b> optalt',true);showPopup({type:'milestone',icon:'🎯',tag:'Næsten færdig',title:'90% optalt!',detail:'Det endelige billede tegner sig'});}
-        if(countedPct>=99&&prevCountedPct<99){addFeed('<b>99%</b> optalt!',true);showPopup({mega:true,icon:'🏁',bg:'gold-bg',title:'99% OPTALT',detail:'De allersidste stemmer tælles op'});}
-        prevCountedPct=countedPct;
-
-        // Party results - brug RIGTIGE stemmer hvis tilgængelige, ellers exit poll
-        var pr=exf(f,'PartyResults');
-        var hasData=false;
-
-        if(realTotalVotes>0){
-            // RIGTIGE DATA fra optalte valgsteder
-            hasData=true;
+        // 3) Bestem datakilde: rigtige stemmer eller exit poll
+        var useReal=realTotal>0;
+        var badge=document.getElementById('dataBadge');
+        if(useReal){
+            badge.textContent='LIVE · '+fmt(realTotal)+' stemmer';
+            badge.className='badge badge-live';
+            document.getElementById('srcLabel').textContent='Live data fra '+realCount+' valgsteder';
+            // Beregn procenter fra rigtige stemmer
             parties.forEach(function(p){
-                p.prevPct=p.pct;
-                p.votes=realPartyVotes[p.id]||0;
-                p.pct=realTotalVotes>0?p.votes/realTotalVotes*100:0;
-                // Seats fra exit poll (bedste estimat indtil DR opdaterer)
+                p.prev=p.pct;
+                p.votes=realVotes[p.id]||0;
+                p.pct=realTotal>0?(p.votes/realTotal*100):0;
             });
-        } else if(pr&&Array.isArray(pr)){
-            // Fallback til exit poll
-            pr.forEach(function(entry){
-                var ef=entry.mapValue?entry.mapValue.fields:null;
-                if(!ef)return;
-                var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;
-                var letter=exf(pf,'Letter')||exf(ef,'Letter');
-                var pct=exf(ef,'VotesSharePct')||0;
-                var seats=exf(ef,'Seats')||0;
-                var votes=exf(ef,'Votes')||0;
-                if(pct>0||seats>0)hasData=true;
-                var p=parties.find(function(x){return x.id===letter});
-                if(!p)return;
-                p.prevPct=p.pct;
-                p.pct=pct;p.seats=seats;p.votes=votes;
-            });
+        } else {
+            badge.textContent='EXIT POLL';
+            badge.className='badge badge-exit';
+            document.getElementById('srcLabel').textContent='DR Exit Poll (venter på optalte stemmer)';
+            // Brug exit poll fra national
+            var npr=exf(nf,'PartyResults');
+            if(npr&&Array.isArray(npr)){npr.forEach(function(e){var ef=e.mapValue?e.mapValue.fields:null;if(!ef)return;var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;var let2=exf(pf,'Letter')||exf(ef,'Letter');var pct=exf(ef,'VotesSharePct')||0;var seats=exf(ef,'Seats')||0;var p=parties.find(function(x){return x.id===let2});if(p){p.prev=p.pct;p.pct=pct;p.seats=seats;p.votes=0}})}
         }
 
-            if(hasData){
-                // Sort by pct
-                var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
-
-                // Update table
-                sorted.forEach(function(p){
-                    var row=document.getElementById('pt-'+p.id);
-                    if(!row)return;
-                    row.querySelector('.pt-bar-fill').style.width=(p.pct/25*100)+'%';
-                    row.querySelector('.pt-pct').textContent=p.pct>0?p.pct.toFixed(1)+'%':'–';
-                    row.querySelector('.pt-seats').textContent=p.seats>0?p.seats:'–';
-                    row.querySelector('.pt-votes').textContent=p.votes>0?fmt(p.votes):'';
-
-                    // Change indicator
-                    var ch=row.querySelector('.pt-change');
-                    var diff=p.pct-p.prevPct;
-                    if(p.prevPct>0&&Math.abs(diff)>=0.1){
-                        ch.textContent=(diff>0?'+':'')+diff.toFixed(1);
-                        ch.className='pt-change '+(diff>0?'up':'down');
-                        row.classList.add('flash');
-                        row.classList.add('sweep');
-                        var pctEl=row.querySelector('.pt-pct');
-                        pctEl.classList.add('bump');
-                        setTimeout(function(){row.classList.remove('flash');row.classList.remove('sweep');pctEl.classList.remove('bump')},2000);
-
-                        // Feed + popup significant changes
-                        if(Math.abs(diff)>=0.5){
-                            addFeed('<b>'+p.id+' '+p.name+'</b> '+(diff>0?'stiger':'falder')+' til <b>'+p.pct.toFixed(1)+'%</b> ('+(diff>0?'+':'')+diff.toFixed(1)+')');
-                            showPopup({type:'party',icon:diff>0?'📈':'📉',tag:diff>0?'Fremgang':'Tilbagegang',title:p.id+' '+p.name+' '+p.pct.toFixed(1)+'%',detail:(diff>0?'+':'')+diff.toFixed(1)+' procentpoint siden sidst'});
-                        }
-                        if(Math.abs(diff)>=2.0){
-                            showPopup({mega:true,icon:diff>0?'🚀':'💥',bg:diff>0?'green-bg':'red-bg',title:p.id+' '+(diff>0?'EKSPLODERER':'STYRTDYKKER'),detail:p.pct.toFixed(1)+'% ('+(diff>0?'+':'')+diff.toFixed(1)+')'});
-                        }
-                    }else{
-                        ch.textContent='–';ch.className='pt-change neutral';
-                    }
-
-                    // FV2022 comparison
-                    var vs22=row.querySelector('.pt-vs22');
-                    if(p.pct>0&&fv2022[p.id]!==undefined){
-                        var d22=p.pct-fv2022[p.id];
-                        vs22.textContent=(d22>0?'+':'')+d22.toFixed(1);
-                        vs22.style.color=d22>0?'#2dc84d':(d22<-0.5?'#e84060':'#5a6280');
-                    }
-
-                    // Re-order in DOM
-                    ptEl.appendChild(row);
-                });
-
-                // Blocs
-                var rS=0,rP=0,bS=0,bP=0,mS=0,mP=0;
-                parties.forEach(function(p){
-                    if(redBloc.indexOf(p.id)!==-1){rS+=p.seats;rP+=p.pct}
-                    else if(blueBloc.indexOf(p.id)!==-1){bS+=p.seats;bP+=p.pct}
-                    if(p.id==='M'){mS=p.seats;mP=p.pct}
-                });
-
-                var redEl=document.getElementById('redSeats');
-                var blueEl=document.getElementById('blueSeats');
-                redEl.textContent=rS;blueEl.textContent=bS;
-                document.getElementById('mSeats').textContent=mS;
-                redEl.classList.add('glow-red');blueEl.classList.add('glow-blue');
-                setTimeout(function(){redEl.classList.remove('glow-red');blueEl.classList.remove('glow-blue')},2000);
-                document.getElementById('redPct').textContent=rP.toFixed(1)+'%';
-                document.getElementById('bluePct').textContent=bP.toFixed(1)+'%';
-                document.getElementById('bbRed').style.width=rP+'%';
-                document.getElementById('bbM').style.width=mP+'%';
-                document.getElementById('bbBlue').style.width=bP+'%';
-
-                // Spærregrænse-check
-                parties.forEach(function(p){
-                    var over=p.pct>=2.0;
-                    if(p.pct>0){
-                        if(!over&&prevSpærre[p.id]){
-                            showPopup({mega:true,icon:'🚨',bg:'red-bg',title:p.id+' UNDER SPÆRREGRÆNSEN',detail:p.name+' er på '+p.pct.toFixed(1)+'% – risikerer at ryge ud!'});
-                            addFeed('<b>'+p.name+'</b> er faldet under spærregrænsen!',true);
-                        }
-                        if(over&&!prevSpærre[p.id]){
-                            showPopup({type:'party',icon:'✅',tag:'Spærregrænse',title:p.id+' er OVER 2% igen',detail:p.name+' er på '+p.pct.toFixed(1)+'%'});
-                            addFeed('<b>'+p.name+'</b> er tilbage over spærregrænsen',true);
-                        }
-                        prevSpærre[p.id]=over;
-                    }
-                });
-
-                // Blokskift-check
-                var currentLead=rS>bS?'red':(bS>rS?'blue':'tie');
-                if(prevBlocLead&&currentLead!==prevBlocLead){
-                    if(currentLead==='red'){
-                        showPopup({mega:true,icon:'🔴',bg:'red-bg',title:'RØD BLOK FØRER!',detail:rS+' mandater mod '+bS});
-                        fireConfetti(60,['#c8102e','#e84060','#ff6080','#fff']);
-                    }else if(currentLead==='blue'){
-                        showPopup({mega:true,icon:'🔵',bg:'blue-bg',title:'BLÅ BLOK FØRER!',detail:bS+' mandater mod '+rS});
-                        fireConfetti(60,['#1a5bb5','#4a90d9','#70b0f0','#fff']);
-                    }
-                    addFeed('<b>'+(currentLead==='red'?'Rød':'Blå')+' blok overtager føringen!</b>',true);
-                }
-                prevBlocLead=currentLead;
-
-                // Floating vote counter
-                var newTotalVotes=0;
-                parties.forEach(function(p){newTotalVotes+=p.votes});
-                if(newTotalVotes!==prevTotalVotes){
-                    var fcEl=document.getElementById('fcValue');
-                    if(newTotalVotes>0){
-                        animateValue(fcEl,prevTotalVotes,newTotalVotes,1200);
-                        fcEl.classList.add('bump');
-                        setTimeout(function(){fcEl.classList.remove('bump')},500);
-                        document.getElementById('fcSub').textContent=countedPct.toFixed(2)+'% optalt';
-                        // Vote particles
-                        if(newTotalVotes>prevTotalVotes){
-                            var gained=newTotalVotes-prevTotalVotes;
-                            for(var pi=0;pi<Math.min(5,Math.ceil(gained/1000));pi++){
-                                setTimeout(function(){spawnVoteParticle('🗳️')},pi*200);
-                            }
-                        }
-                    }
-                    prevTotalVotes=newTotalVotes;
-                }
-
-                // Speed up ticker when new data
-                document.getElementById('ticker').classList.add('fast');
-                setTimeout(function(){document.getElementById('ticker').classList.remove('fast')},5000);
-
-                // Check for flertal
-                if(rS+mS>=90&&prevBlocLead){
-                    // Just notify once
-                }
-
-                // Seat chart - kun partier med optalte stemmer
-                var countedParties=parties.filter(function(p){return p.votes>0});
-                if(countedParties.length>0){
-                    seatChart.data.labels=countedParties.map(function(p){return p.id});
-                    seatChart.data.datasets[0].data=countedParties.map(function(p){return p.votes});
-                    seatChart.data.datasets[0].backgroundColor=countedParties.map(function(p){return p.color});
-                    seatChart.options.plugins.tooltip.callbacks.label=function(c){return c.label+': '+fmt(c.raw)+' stemmer'};
-                    seatChart.update('none');
-                }
+        // 4) Update party table (sorted)
+        var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
+        sorted.forEach(function(p){
+            var row=document.getElementById('pr-'+p.id);if(!row)return;
+            row.querySelector('.p-bar-fill').style.width=(p.pct/30*100)+'%';
+            row.querySelector('.p-pct').textContent=p.pct>0?p.pct.toFixed(1)+'%':'–';
+            row.querySelector('.p-votes').textContent=p.votes>0?fmt(p.votes):'';
+            row.querySelector('.p-seats').textContent=p.seats>0?p.seats:'';
+            // FV22 diff
+            var df=row.querySelector('.p-diff');
+            if(p.pct>0&&fv22[p.id]!==undefined){var d=p.pct-fv22[p.id];df.textContent=(d>0?'+':'')+d.toFixed(1);df.className='p-diff '+(d>0.5?'up':(d<-0.5?'down':'flat'))}
+            // Change flash
+            if(p.prev>0&&Math.abs(p.pct-p.prev)>=0.1){row.classList.add('flash');setTimeout(function(){row.classList.remove('flash')},2000);
+                if(Math.abs(p.pct-p.prev)>=0.5)addFeed((p.pct>p.prev?'📈':'📉')+' <b>'+p.id+'</b> '+(p.pct>p.prev?'stiger':'falder')+' til <b>'+p.pct.toFixed(1)+'%</b>')
             }
+            pT.appendChild(row);
+        });
+
+        // 5) Blocs
+        var rS=0,rP=0,bS=0,bP=0,mS=0,mP=0;
+        parties.forEach(function(p){if(redB.indexOf(p.id)!==-1){rS+=p.seats;rP+=p.pct}else if(blueB.indexOf(p.id)!==-1){bS+=p.seats;bP+=p.pct}if(p.id==='M'){mS=p.seats;mP=p.pct}});
+        document.getElementById('rSeats').textContent=rS||Math.round(rP/100*175);
+        document.getElementById('bSeats').textContent=bS||Math.round(bP/100*175);
+        document.getElementById('mSeats').textContent=mS||Math.round(mP/100*175);
+        document.getElementById('rPct').textContent=rP.toFixed(1)+'%';
+        document.getElementById('bPct').textContent=bP.toFixed(1)+'%';
+        document.getElementById('bbR').style.width=rP+'%';
+        document.getElementById('bbM').style.width=mP+'%';
+        document.getElementById('bbB').style.width=bP+'%';
+        var lead=rP>bP?'red':(bP>rP?'blue':'tie');
+        if(prevBlocLead&&lead!==prevBlocLead){addFeed('🔥 <b>'+(lead==='red'?'Rød':'Blå')+' blok overtager føringen!</b>',true)}
+        prevBlocLead=lead;
+
+        // 6) Vote chart (only real votes)
+        if(realTotal>0){
+            var cs=parties.filter(function(p){return p.votes>0}).sort(function(a,b){return b.votes-a.votes});
+            vChart.data.labels=cs.map(function(p){return p.id});
+            vChart.data.datasets[0].data=cs.map(function(p){return p.votes});
+            vChart.data.datasets[0].backgroundColor=cs.map(function(p){return p.color});
+            vChart.update('none');
         }
 
-        // Storkredse
-        var pollingDone=0;
-        for(var i=1;i<=10;i++){
-            try{
-                var sr=await fetch(DR+'FV2026-geography-results/storkreds-'+i);
-                if(!sr.ok)continue;
-                var sj=await sr.json();
-                var sf=sj.fields;
-                var sc=exf(sf,'CountedPct')||0;
-                var st=exf(sf,'ResultType')||'Setup';
-                var constWithResults=exf(sf,'ConstituenciesWithResults')||[];
-                var subDone=Array.isArray(constWithResults)?constWithResults.length:0;
-                pollingDone+=subDone;
+        // 7) Storkredse
+        for(var si=1;si<=10;si++){try{
+            var sr=await fetch(DR+'FV2026-geography-results/storkreds-'+si);if(!sr.ok)continue;
+            var sj=await sr.json();var sf=sj.fields;
+            var sc=exf(sf,'CountedPct')||0;var st=exf(sf,'ResultType')||'Setup';
+            var ski=document.getElementById('sk-'+(si));if(!ski)continue;
+            ski.querySelector('.sk-bf').style.width=sc+'%';
+            ski.querySelector('.sk-pct').textContent=sc.toFixed(1)+'%';
+            if(st==='Final'||st==='FinalResult'){ski.classList.add('done');if(!ski.dataset.done){ski.dataset.done='1';addFeed('✅ <b>'+skNames[si-1]+'</b> er færdigoptalt!',true)}}
+            else if(sc>0&&!ski.dataset.started){ski.dataset.started='1';addFeed('📬 Optælling startet i <b>'+skNames[si-1]+'</b>')}
+        }catch(e){}}
 
-                var ski=document.getElementById('ski-'+i);
-                if(ski){
-                    ski.querySelector('.sk-bf').style.width=sc+'%';
-                    ski.querySelector('.sk-p').textContent=sc.toFixed(2)+'%';
-                    var votes=exf(sf,'TotalReceivedVotes')||0;
-                    if(subDone>0)ski.querySelector('.sk-n').textContent=skNames[i-1]+' · '+subDone+' kreds'+(subDone>1?'e':'');
-                    else if(votes>0)ski.querySelector('.sk-n').textContent=skNames[i-1]+' · '+fmt(votes)+' st.';
-                    if(st==='Final'){ski.classList.add('done')}
-                    else{ski.classList.remove('done')}
+        // 8) Update ticker
+        var tickTxt=sorted.filter(function(p){return p.pct>0}).map(function(p){return p.id+' '+p.pct.toFixed(1)+'%'}).join(' · ');
+        if(tickTxt){var t=document.getElementById('ticker');t.innerHTML='<span>'+tickTxt+' — '+countedPct.toFixed(2)+'% optalt'+(useReal?' ('+fmt(realTotal)+' stemmer)':' (exit poll)')+'</span><span>'+tickTxt+'</span>'}
 
-                    // Update map
-                    var mapPath=document.getElementById('map-'+i);
-                    if(mapPath){
-                        if(st==='Final'){
-                            mapPath.className.baseVal='done';
-                        }else if(sc>0){
-                            // Color intensity based on counted percentage
-                            var intensity=Math.min(sc/100,1);
-                            var r=Math.round(20+intensity*180);
-                            var g=Math.round(12+intensity*30);
-                            var b=Math.round(30+intensity*40);
-                            mapPath.style.fill='rgb('+r+','+g+','+b+')';
-                            mapPath.className.baseVal='counting';
-                            if(!mapPath.dataset.pulsed&&sc>0){
-                                mapPath.dataset.pulsed='1';
-                                mapPath.classList.add('pulse-map');
-                                setTimeout(function(mp){mp.classList.remove('pulse-map')},1000,mapPath);
-                            }
-                        }
-                    }
-
-                    // Feed + mega popup when storkreds completes
-                    if(st==='Final'&&!ski.dataset.notified){
-                        ski.dataset.notified='1';
-                        addFeed('<b>'+skNames[i-1]+'</b> er færdigoptalt!',true);
-                        showPopup({mega:true,icon:'✅',bg:'green-bg',title:skNames[i-1].toUpperCase()+' FÆRDIG!',detail:'Storkredsen er færdigoptalt'});
-                        fireConfetti(40,['#2dc84d','#3dd85d','#fff','#ffd15c']);
-                        ski.classList.add('just-done');
-                        setTimeout(function(s){s.classList.remove('just-done')},1000,ski);
-                    }
-                    // Popup when counting starts in a storkreds
-                    if(sc>0&&!ski.dataset.started){
-                        ski.dataset.started='1';
-                        showPopup({type:'storkreds',icon:'📬',tag:'Optælling startet',title:skNames[i-1],detail:'De første stemmer tælles op'});
-                    }
-                }
-            }catch(e){}
-        }
-
-        // Count done storkredse
-        var doneCount=document.querySelectorAll('.sk-item.done').length;
-        document.getElementById('csDetail').textContent=doneCount+' / 10 storkredse';
-        if(pollingDone!==totalPollingDone&&pollingDone>0){
-            if(pollingDone>totalPollingDone){
-                addFeed('Nye kredse med resultater: <b>'+pollingDone+'</b> opstillingskredse');
-                showPopup({type:'storkreds',icon:'📊',tag:'Optælling',title:pollingDone+' kredse med resultater',detail:doneCount+' af 10 storkredse færdige'});
-            }
-            totalPollingDone=pollingDone;
-        }
-
-        // Senest opdateret
-        document.getElementById('lastUpdate').textContent='Opdateret '+ts();
-
-        // Floating counter
-        if(realTotalVotes>0){
-            var fcEl=document.getElementById('fcValue');
-            animateValue(fcEl,prevTotalVotes,realTotalVotes,1200);
-            fcEl.classList.add('bump');
-            setTimeout(function(){fcEl.classList.remove('bump')},500);
-            document.getElementById('fcSub').textContent=realStederCount+' valgsteder · '+countedPct.toFixed(2)+'% optalt';
-            prevTotalVotes=realTotalVotes;
-        }
-
-    }catch(err){
-        addFeed('Fejl: '+err.message);
-    }
+    }catch(err){addFeed('⚠️ Fejl: '+err.message)}
 }
 
-// ====== START ======
 fetchAll();
 setInterval(fetchAll,INTERVAL);
-
-// Update ticker with latest data periodically
-setInterval(function(){
-    var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
-    var txt=sorted.filter(function(p){return p.pct>0}).map(function(p){return p.id+' '+p.pct.toFixed(1)+'%'}).join(' · ');
-    if(txt){
-        var track=document.getElementById('ticker');
-        track.innerHTML='<span>'+txt+'</span><span>'+prevCountedPct.toFixed(2)+'% optalt · '+totalPollingDone+' valgsteder</span><span>'+txt+'</span><span>'+prevCountedPct.toFixed(2)+'% optalt · '+totalPollingDone+' valgsteder</span>';
-    }
-},30000);
 </script>
-
 </body>
 </html>
