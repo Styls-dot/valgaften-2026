@@ -815,15 +815,62 @@ async function scanValgsteder(){
 // ====== LIVE FETCH ======
 async function fetchAll(){
     try{
-        // National
+        // Hent RIGTIGE stemmer fra optalte valgsteder (ikke exit poll)
+        var realRes=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'FV2026-geography-results'}],where:{compositeFilter:{op:'AND',filters:[{fieldFilter:{field:{fieldPath:'TotalReceivedVotes'},op:'GREATER_THAN',value:{integerValue:'0'}}},{fieldFilter:{field:{fieldPath:'GeographyType'},op:'EQUAL',value:{stringValue:'VotingArea'}}}]}},limit:500,orderBy:[{field:{fieldPath:'TotalReceivedVotes'},direction:'DESCENDING'}]}})});
+
+        var realPartyVotes={};
+        var realTotalVotes=0;
+        var realStederCount=0;
+
+        if(realRes.ok){
+            var realData=await realRes.json();
+            if(Array.isArray(realData)){
+                realData.forEach(function(item){
+                    if(!item.document)return;
+                    var f2=item.document.fields;
+                    var v2=parseInt(exf(f2,'TotalReceivedVotes')||'0');
+                    if(v2<=0)return;
+                    realTotalVotes+=v2;
+                    realStederCount++;
+                    var pr2=exf(f2,'PartyResults');
+                    if(pr2&&Array.isArray(pr2)){
+                        pr2.forEach(function(entry){
+                            var ef2=entry.mapValue?entry.mapValue.fields:null;
+                            if(!ef2)return;
+                            var pf2=ef2.Party?(ef2.Party.mapValue?ef2.Party.mapValue.fields:ef2):ef2;
+                            var letter=exf(pf2,'Letter')||exf(ef2,'Letter');
+                            var pv=parseInt(exf(ef2,'Votes')||'0');
+                            if(letter&&pv>0) realPartyVotes[letter]=(realPartyVotes[letter]||0)+pv;
+                        });
+                    }
+                    // Track valgsted for popup
+                    var vsId=exf(f2,'Id')||exf(f2,'GeographyKey')||'';
+                    var vsName=exf(f2,'FullGeographyName')||exf(f2,'GeographyName')||vsId;
+                    if(vsId&&!knownValgsteder[vsId]){
+                        knownValgsteder[vsId]=true;
+                        valgstedCount++;
+                        var leading=exf(f2,'LeadingPartyLetter')||'';
+                        var votes=v2;
+                        setTimeout(function(){
+                            var p3=parties.find(function(pp){return pp.id===leading});
+                            var clr=p3?p3.color:'#5a6280';
+                            showPopup({type:'storkreds',icon:'🗳️',tag:'Valgsted #'+valgstedCount,title:vsName,detail:'<span style="color:'+clr+';font-weight:800">'+leading+'</span> størst · '+fmt(votes)+' stemmer',duration:4000});
+                            addFeed('🗳️ <b>'+vsName+'</b> optalt – '+leading+' størst · '+fmt(votes)+' st.');
+                            spawnVoteParticle('🗳️');
+                        },(valgstedCount%10)*600);
+                    }
+                });
+            }
+        }
+
+        // National status (for CountedPct)
         var res=await fetch(DR+'FV2026-geography-results/land-dk');
         if(!res.ok)throw new Error('HTTP '+res.status);
         var json=await res.json();
         var f=json.fields;
 
         var countedPct=exf(f,'CountedPct')||0;
-        var resultType=exf(f,'ResultType')||'Setup';
-        var totalVotes=exf(f,'TotalReceivedVotes')||0;
+        var resultType=realTotalVotes>0?'LIVE':'ExitPoll';
 
         // Reset countdown
         updateCountdown=10;
@@ -835,8 +882,10 @@ async function fetchAll(){
         document.querySelector('.top-bar').classList.add('new-data');
         setTimeout(function(){document.querySelector('.top-bar').classList.remove('new-data')},600);
 
-        var typeMap={'Setup':'VENTER','ExitPoll':'EXIT POLL','Preliminary':'FORELØBIG','Final':'ENDELIGT'};
-        document.getElementById('topType').textContent=typeMap[resultType]||resultType;
+        document.getElementById('topType').textContent=realTotalVotes>0?'LIVE DATA · '+fmt(realTotalVotes)+' stemmer · '+realStederCount+' valgsteder':'EXIT POLL';
+        document.getElementById('topType').style.color=realTotalVotes>0?'#2dc84d':'#e84060';
+
+        var typeMap={'Setup':'VENTER','ExitPoll':'EXIT POLL','Preliminary':'FORELØBIG','Final':'ENDELIGT','LIVE':'LIVE DATA'};
 
         // Feed + Popup: type change
         if(resultType!==prevResultType&&prevResultType!==''){
@@ -858,10 +907,21 @@ async function fetchAll(){
         if(countedPct>=99&&prevCountedPct<99){addFeed('<b>99%</b> optalt!',true);showPopup({mega:true,icon:'🏁',bg:'gold-bg',title:'99% OPTALT',detail:'De allersidste stemmer tælles op'});}
         prevCountedPct=countedPct;
 
-        // Party results
+        // Party results - brug RIGTIGE stemmer hvis tilgængelige, ellers exit poll
         var pr=exf(f,'PartyResults');
-        if(pr&&Array.isArray(pr)){
-            var hasData=false;
+        var hasData=false;
+
+        if(realTotalVotes>0){
+            // RIGTIGE DATA fra optalte valgsteder
+            hasData=true;
+            parties.forEach(function(p){
+                p.prevPct=p.pct;
+                p.votes=realPartyVotes[p.id]||0;
+                p.pct=realTotalVotes>0?p.votes/realTotalVotes*100:0;
+                // Seats fra exit poll (bedste estimat indtil DR opdaterer)
+            });
+        } else if(pr&&Array.isArray(pr)){
+            // Fallback til exit poll
             pr.forEach(function(entry){
                 var ef=entry.mapValue?entry.mapValue.fields:null;
                 if(!ef)return;
@@ -876,6 +936,7 @@ async function fetchAll(){
                 p.prevPct=p.pct;
                 p.pct=pct;p.seats=seats;p.votes=votes;
             });
+        }
 
             if(hasData){
                 // Sort by pct
@@ -1092,16 +1153,17 @@ async function fetchAll(){
             totalPollingDone=pollingDone;
         }
 
-        // Scan individuelle valgsteder
-        await scanValgsteder();
-
         // Senest opdateret
         document.getElementById('lastUpdate').textContent='Opdateret '+ts();
 
-        // ADHD: always show something happened
-        var valgstederCount=Object.keys(knownValgsteder).length;
-        if(valgstederCount>0){
-            document.getElementById('fcSub').textContent=valgstederCount+' valgsteder · '+countedPct.toFixed(2)+'%';
+        // Floating counter
+        if(realTotalVotes>0){
+            var fcEl=document.getElementById('fcValue');
+            animateValue(fcEl,prevTotalVotes,realTotalVotes,1200);
+            fcEl.classList.add('bump');
+            setTimeout(function(){fcEl.classList.remove('bump')},500);
+            document.getElementById('fcSub').textContent=realStederCount+' valgsteder · '+countedPct.toFixed(2)+'% optalt';
+            prevTotalVotes=realTotalVotes;
         }
 
     }catch(err){
