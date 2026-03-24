@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIVE – Folketingsvalg 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'DM Sans',sans-serif;background:#06090f;color:#c8d4e0;min-height:100vh;overflow-x:hidden}
+
+        /* HEADER */
+        .top-bar{background:#0c1018;border-bottom:2px solid #c8102e;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;position:sticky;top:0;z-index:100}
+        .top-bar .logo{font-size:18px;font-weight:800;color:#fff}
+        .top-bar .logo span{color:#c8102e}
+        .live-pill{display:flex;align-items:center;gap:6px;background:#c8102e;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:0.5px}
+        .live-pill::before{content:'';width:7px;height:7px;background:#fff;border-radius:50%;animation:blink 1s infinite}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+        .clock{font-size:28px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:1px}
+        .counted-mini{font-size:13px;color:#8892a8;text-align:right}
+        .counted-mini b{color:#fff;font-size:18px}
+
+        /* TICKER */
+        .ticker-wrap{background:#c8102e;overflow:hidden;height:32px;display:flex;align-items:center;position:relative}
+        .ticker-label{background:#8b0a1e;color:#fff;font-size:11px;font-weight:700;padding:0 14px;height:100%;display:flex;align-items:center;z-index:2;letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
+        .ticker-track{display:flex;animation:scroll 40s linear infinite;white-space:nowrap}
+        .ticker-track span{padding:0 40px;font-size:13px;font-weight:600;color:#fff}
+        @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+        /* LAYOUT */
+        .main{display:grid;grid-template-columns:1fr 360px;gap:0;min-height:calc(100vh - 76px)}
+        .left{padding:20px}
+        .right{background:#0a0f18;border-left:1px solid #141c2a;padding:16px;overflow-y:auto;max-height:calc(100vh - 76px)}
+
+        /* BLOC BATTLE */
+        .bloc-battle{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;background:#0c1018;border-radius:16px;overflow:hidden;border:1px solid #141c2a}
+        .bb-side{flex:1;padding:24px 20px;text-align:center}
+        .bb-side.red{background:linear-gradient(135deg,#180a10,#0c1018)}
+        .bb-side.blue{background:linear-gradient(135deg,#0c1018,#0a0e18)}
+        .bb-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}
+        .bb-side.red .bb-label{color:#e84060}
+        .bb-side.blue .bb-label{color:#4a90d9}
+        .bb-seats{font-size:52px;font-weight:800;line-height:1}
+        .bb-side.red .bb-seats{color:#e84060}
+        .bb-side.blue .bb-seats{color:#4a90d9}
+        .bb-pct{font-size:14px;color:#5a6280;margin-top:4px}
+        .bb-vs{background:#141c2a;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+        .bb-vs .vs-text{font-size:10px;color:#5a6280;text-transform:uppercase;letter-spacing:1px}
+        .bb-vs .vs-m{font-size:20px;font-weight:800;color:#a78bfa}
+        .bb-vs .vs-label{font-size:9px;color:#5a6280}
+        .bb-bar{height:6px;display:flex;border-radius:3px;overflow:hidden;margin:0 20px 0 20px}
+        .bb-bar-r{background:linear-gradient(90deg,#c8102e,#e84060);transition:width 1s}
+        .bb-bar-m{background:#a78bfa;transition:width 1s}
+        .bb-bar-b{background:linear-gradient(90deg,#4a90d9,#1a5bb5);transition:width 1s}
+
+        /* PARTY TABLE */
+        .party-table{margin-bottom:16px}
+        .pt-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #0e1420;transition:background 0.3s}
+        .pt-row.flash{background:rgba(255,209,92,0.08)}
+        .pt-letter{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
+        .pt-name{flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pt-bar{width:120px;height:16px;background:#0a0f14;border-radius:4px;overflow:hidden;flex-shrink:0}
+        .pt-bar-fill{height:100%;border-radius:4px;transition:width 1.5s ease}
+        .pt-pct{width:50px;text-align:right;font-weight:700;font-size:14px;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .pt-change{width:40px;text-align:right;font-size:11px;font-weight:600;flex-shrink:0}
+        .pt-change.up{color:#2dc84d}
+        .pt-change.down{color:#e84060}
+        .pt-change.neutral{color:#5a6280}
+        .pt-seats{width:35px;text-align:right;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;font-variant-numeric:tabular-nums}
+        .pt-votes{width:70px;text-align:right;font-size:11px;color:#5a6280;flex-shrink:0;font-variant-numeric:tabular-nums}
+
+        /* SECTION HEADERS */
+        .section-h{font-size:11px;font-weight:700;color:#5a6280;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 10px;display:flex;align-items:center;gap:8px}
+        .section-h::after{content:'';flex:1;height:1px;background:#141c2a}
+
+        /* STORKREDS MINI */
+        .sk-mini{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:16px}
+        .sk-item{background:#0c1018;border-radius:8px;padding:8px 10px;border:1px solid #141c2a;display:flex;align-items:center;gap:8px}
+        .sk-item .sk-n{font-size:11px;font-weight:600;color:#c8d4e0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sk-item .sk-b{flex:1;height:4px;background:#141c2a;border-radius:2px;overflow:hidden}
+        .sk-item .sk-bf{height:100%;background:linear-gradient(90deg,#c8102e,#e84060);border-radius:2px;transition:width 1s}
+        .sk-item .sk-p{font-size:11px;font-weight:700;color:#e84060;width:42px;text-align:right;font-variant-numeric:tabular-nums}
+        .sk-item.done{border-color:#1a3a1a}
+        .sk-item.done .sk-bf{background:#2dc84d}
+        .sk-item.done .sk-p{color:#2dc84d}
+
+        /* LIVE FEED */
+        .feed{display:flex;flex-direction:column;gap:6px}
+        .feed-item{background:#0c1018;border-radius:8px;padding:10px 12px;border:1px solid #141c2a;animation:fadeIn 0.5s ease}
+        .feed-item.breaking{border-color:#c8102e;background:#120a0e}
+        .feed-item .fi-time{font-size:10px;color:#5a6280;margin-bottom:3px;font-variant-numeric:tabular-nums}
+        .feed-item .fi-text{font-size:12px;color:#c8d4e0;line-height:1.4}
+        .feed-item .fi-text b{color:#fff}
+        .feed-item.breaking .fi-text{color:#e84060}
+        .feed-item.breaking .fi-label{font-size:9px;font-weight:700;color:#c8102e;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+        /* CHART */
+        .chart-wrap{background:#0c1018;border-radius:12px;padding:14px;border:1px solid #141c2a;margin-bottom:16px}
+        .chart-wrap h4{font-size:11px;font-weight:700;color:#5a6280;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+        .chart-box{height:200px;position:relative}
+
+        /* COUNTED PROGRESS */
+        .counted-strip{background:#0c1018;border-radius:10px;padding:12px 16px;border:1px solid #141c2a;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+        .cs-label{font-size:11px;color:#5a6280;text-transform:uppercase;letter-spacing:0.5px}
+        .cs-bar{flex:1;height:8px;background:#141c2a;border-radius:4px;overflow:hidden}
+        .cs-bar-fill{height:100%;background:linear-gradient(90deg,#c8102e,#e84060);border-radius:4px;transition:width 1s}
+        .cs-pct{font-size:18px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;min-width:60px;text-align:right}
+        .cs-detail{font-size:10px;color:#5a6280;text-align:right}
+
+        @media(max-width:900px){
+            .main{grid-template-columns:1fr}
+            .right{max-height:none;border-left:none;border-top:1px solid #141c2a}
+        }
+        @media(max-width:600px){
+            .top-bar{flex-wrap:wrap;gap:8px;padding:8px 12px}
+            .clock{font-size:20px}
+            .bb-seats{font-size:36px}
+            .sk-mini{grid-template-columns:1fr}
+            .pt-bar{width:80px}
+            .pt-votes{display:none}
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <div class="logo">Folketingsvalg <span>2026</span></div>
+    <div class="live-pill">LIVE</div>
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="counted-mini">
+        <div><b id="topCounted">0,00%</b> optalt</div>
+        <div id="topType" style="font-size:10px;color:#e84060;">EXIT POLL</div>
+    </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+    <div class="ticker-label">Seneste</div>
+    <div class="ticker-track" id="ticker">
+        <span>Valgstederne er lukket – optælling i gang</span>
+        <span>Exit poll: A 19,2% · F 11,4% · I 10,5% · V 9,3%</span>
+        <span>Moderaterne som kingmaker med 8,2%</span>
+        <span>Alternativet springer til 4,1%</span>
+        <span>Bornholm forventes færdig kl. ~21:49</span>
+        <span>Valgstederne er lukket – optælling i gang</span>
+        <span>Exit poll: A 19,2% · F 11,4% · I 10,5% · V 9,3%</span>
+        <span>Moderaterne som kingmaker med 8,2%</span>
+        <span>Alternativet springer til 4,1%</span>
+        <span>Bornholm forventes færdig kl. ~21:49</span>
+    </div>
+</div>
+
+<div class="main">
+<div class="left">
+
+    <!-- COUNTED PROGRESS -->
+    <div class="counted-strip">
+        <div class="cs-label">Optalt</div>
+        <div class="cs-bar"><div class="cs-bar-fill" id="csBar" style="width:0%"></div></div>
+        <div class="cs-pct" id="csPct">0,00%</div>
+        <div class="cs-detail" id="csDetail">0 valgsteder</div>
+    </div>
+
+    <!-- BLOC BATTLE -->
+    <div class="bloc-battle">
+        <div class="bb-side red">
+            <div class="bb-label">Rød blok</div>
+            <div class="bb-seats" id="redSeats">85</div>
+            <div class="bb-pct" id="redPct">–</div>
+        </div>
+        <div class="bb-vs">
+            <div class="vs-text">vs</div>
+            <div class="vs-m" id="mSeats">14</div>
+            <div class="vs-label">Moderaterne</div>
+        </div>
+        <div class="bb-side blue">
+            <div class="bb-label">Blå blok</div>
+            <div class="bb-seats" id="blueSeats">76</div>
+            <div class="bb-pct" id="bluePct">–</div>
+        </div>
+    </div>
+    <div class="bb-bar" style="margin-top:-12px;margin-bottom:20px;">
+        <div class="bb-bar-r" id="bbRed" style="width:48%"></div>
+        <div class="bb-bar-m" id="bbM" style="width:8%"></div>
+        <div class="bb-bar-b" id="bbBlue" style="width:44%"></div>
+    </div>
+
+    <!-- PARTI TABLE -->
+    <div class="section-h">Partier</div>
+    <div class="party-table" id="partyTable"></div>
+
+    <!-- STORKREDSE -->
+    <div class="section-h">Storkredse</div>
+    <div class="sk-mini" id="skGrid"></div>
+
+</div>
+
+<!-- RIGHT SIDEBAR -->
+<div class="right">
+
+    <div class="section-h">Mandatfordeling</div>
+    <div class="chart-wrap">
+        <div class="chart-box"><canvas id="seatChart"></canvas></div>
+    </div>
+
+    <div class="section-h">Live feed</div>
+    <div class="feed" id="feed"></div>
+
+</div>
+</div>
+
+<script>
+// ====== CONFIG ======
+var DR = 'https://firestore.googleapis.com/v1/projects/drdk-portal-valhal-prod/databases/(default)/documents/';
+var INTERVAL = 15000;
+var redBloc = ['A','F','Ø','B','Å'];
+var blueBloc = ['V','I','C','Æ','O','Q','H'];
+var skNames = ['København','Kbh. Omegn','Nordsjælland','Bornholm','Sjælland','Fyn','Sydjylland','Østjylland','Vestjylland','Nordjylland'];
+
+var parties = [
+    {id:'A',name:'Socialdemokratiet',color:'#c8102e',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'F',name:'SF',color:'#e4007e',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'I',name:'Liberal Alliance',color:'#00bce4',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'V',name:'Venstre',color:'#0054a0',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'M',name:'Moderaterne',color:'#8b5cf6',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'Æ',name:'Danmarksdemokraterne',color:'#0f4d3a',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'O',name:'Dansk Folkeparti',color:'#e4d600',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'C',name:'Konservative',color:'#00583c',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'B',name:'Radikale Venstre',color:'#e4007e',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'Ø',name:'Enhedslisten',color:'#e6801a',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'Å',name:'Alternativet',color:'#2dc84d',pct:0,seats:0,votes:0,prevPct:0},
+    {id:'H',name:'Borgernes Parti',color:'#1e3a5f',pct:0,seats:0,votes:0,prevPct:0},
+];
+
+var feedItems = [];
+var prevResultType = '';
+var prevCountedPct = 0;
+var totalPollingDone = 0;
+
+// ====== HELPERS ======
+function exf(fields,key){
+    if(!fields||!fields[key])return null;
+    var v=fields[key];
+    if(v.stringValue!==undefined)return v.stringValue;
+    if(v.integerValue!==undefined)return Number(v.integerValue);
+    if(v.doubleValue!==undefined)return v.doubleValue;
+    if(v.arrayValue)return v.arrayValue.values||[];
+    if(v.mapValue)return v.mapValue.fields;
+    return null;
+}
+
+function fmt(n){return n.toLocaleString('da-DK')}
+function ts(){return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+
+// ====== BUILD UI ======
+// Clock
+function tickClock(){document.getElementById('clock').textContent=ts()}
+tickClock();setInterval(tickClock,1000);
+
+// Party table
+var ptEl=document.getElementById('partyTable');
+parties.forEach(function(p){
+    var row=document.createElement('div');
+    row.className='pt-row';row.id='pt-'+p.id;
+    row.innerHTML='<div class="pt-letter" style="background:'+p.color+'">'+p.id+'</div>'+
+        '<div class="pt-name">'+p.name+'</div>'+
+        '<div class="pt-bar"><div class="pt-bar-fill" style="width:0%;background:'+p.color+';opacity:.8"></div></div>'+
+        '<div class="pt-pct" style="color:'+p.color+'">–</div>'+
+        '<div class="pt-change neutral">–</div>'+
+        '<div class="pt-seats">–</div>'+
+        '<div class="pt-votes"></div>';
+    ptEl.appendChild(row);
+});
+
+// Storkredse
+var skEl=document.getElementById('skGrid');
+for(var i=0;i<10;i++){
+    var s=document.createElement('div');
+    s.className='sk-item';s.id='ski-'+(i+1);
+    s.innerHTML='<div class="sk-n">'+skNames[i]+'</div><div class="sk-b"><div class="sk-bf" style="width:0%"></div></div><div class="sk-p">0%</div>';
+    skEl.appendChild(s);
+}
+
+// Seat chart
+Chart.defaults.color='#5a6280';Chart.defaults.borderColor='#141c2a';Chart.defaults.font.family="'DM Sans',sans-serif";
+var seatChart=new Chart(document.getElementById('seatChart'),{
+    type:'doughnut',
+    data:{labels:parties.map(function(p){return p.id}),datasets:[{data:parties.map(function(){return 0}),backgroundColor:parties.map(function(p){return p.color}),borderWidth:2,borderColor:'#0c1018'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' mandater'}}}}},
+    plugins:[{id:'ct',afterDraw:function(ch){var ctx=ch.ctx,a=ch.chartArea,cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font="bold 22px 'DM Sans'";ctx.fillStyle='#fff';ctx.fillText('175',cx,cy-6);ctx.font="10px 'DM Sans'";ctx.fillStyle='#5a6280';ctx.fillText('mandater',cx,cy+12);ctx.restore()}}]
+});
+
+// ====== FEED ======
+function addFeed(text,breaking){
+    feedItems.unshift({text:text,time:ts(),breaking:!!breaking});
+    if(feedItems.length>30)feedItems.pop();
+    renderFeed();
+}
+
+function renderFeed(){
+    var el=document.getElementById('feed');
+    el.innerHTML='';
+    feedItems.slice(0,15).forEach(function(f){
+        var d=document.createElement('div');
+        d.className='feed-item'+(f.breaking?' breaking':'');
+        d.innerHTML=(f.breaking?'<div class="fi-label">Breaking</div>':'')+
+            '<div class="fi-time">'+f.time+'</div>'+
+            '<div class="fi-text">'+f.text+'</div>';
+        el.appendChild(d);
+    });
+}
+
+addFeed('Dashboard startet – henter data fra DR hvert 15. sekund');
+
+// ====== LIVE FETCH ======
+async function fetchAll(){
+    try{
+        // National
+        var res=await fetch(DR+'FV2026-geography-results/land-dk');
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        var json=await res.json();
+        var f=json.fields;
+
+        var countedPct=exf(f,'CountedPct')||0;
+        var resultType=exf(f,'ResultType')||'Setup';
+        var totalVotes=exf(f,'TotalReceivedVotes')||0;
+
+        // Status
+        document.getElementById('csPct').textContent=countedPct.toFixed(2).replace('.',',')+' %';
+        document.getElementById('csBar').style.width=countedPct+'%';
+        document.getElementById('topCounted').textContent=countedPct.toFixed(2).replace('.',',')+' %';
+
+        var typeMap={'Setup':'VENTER','ExitPoll':'EXIT POLL','Preliminary':'FORELØBIG','Final':'ENDELIGT'};
+        document.getElementById('topType').textContent=typeMap[resultType]||resultType;
+
+        // Feed: type change
+        if(resultType!==prevResultType&&prevResultType!==''){
+            addFeed('Status skifter til <b>'+(typeMap[resultType]||resultType)+'</b>',true);
+        }
+        prevResultType=resultType;
+
+        // Feed: counting milestones
+        if(countedPct>=25&&prevCountedPct<25)addFeed('<b>25%</b> af stemmerne er nu optalt',true);
+        if(countedPct>=50&&prevCountedPct<50)addFeed('<b>50%</b> af stemmerne er optalt – halvvejs!',true);
+        if(countedPct>=75&&prevCountedPct<75)addFeed('<b>75%</b> optalt – slutspurten begynder',true);
+        if(countedPct>=95&&prevCountedPct<95)addFeed('<b>95%</b> optalt – næsten færdig!',true);
+        if(countedPct>=100&&prevCountedPct<100)addFeed('Alle stemmer er optalt!',true);
+        prevCountedPct=countedPct;
+
+        // Party results
+        var pr=exf(f,'PartyResults');
+        if(pr&&Array.isArray(pr)){
+            var hasData=false;
+            pr.forEach(function(entry){
+                var ef=entry.mapValue?entry.mapValue.fields:null;
+                if(!ef)return;
+                var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;
+                var letter=exf(pf,'Letter')||exf(ef,'Letter');
+                var pct=exf(ef,'VotesSharePct')||0;
+                var seats=exf(ef,'Seats')||0;
+                var votes=exf(ef,'Votes')||0;
+                if(pct>0||seats>0)hasData=true;
+                var p=parties.find(function(x){return x.id===letter});
+                if(!p)return;
+                p.prevPct=p.pct;
+                p.pct=pct;p.seats=seats;p.votes=votes;
+            });
+
+            if(hasData){
+                // Sort by pct
+                var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
+
+                // Update table
+                sorted.forEach(function(p){
+                    var row=document.getElementById('pt-'+p.id);
+                    if(!row)return;
+                    row.querySelector('.pt-bar-fill').style.width=(p.pct/25*100)+'%';
+                    row.querySelector('.pt-pct').textContent=p.pct>0?p.pct.toFixed(1)+'%':'–';
+                    row.querySelector('.pt-seats').textContent=p.seats>0?p.seats:'–';
+                    row.querySelector('.pt-votes').textContent=p.votes>0?fmt(p.votes):'';
+
+                    // Change indicator
+                    var ch=row.querySelector('.pt-change');
+                    var diff=p.pct-p.prevPct;
+                    if(p.prevPct>0&&Math.abs(diff)>=0.1){
+                        ch.textContent=(diff>0?'+':'')+diff.toFixed(1);
+                        ch.className='pt-change '+(diff>0?'up':'down');
+                        row.classList.add('flash');
+                        setTimeout(function(){row.classList.remove('flash')},2000);
+
+                        // Feed significant changes
+                        if(Math.abs(diff)>=0.5){
+                            addFeed('<b>'+p.id+' '+p.name+'</b> '+(diff>0?'stiger':'falder')+' til <b>'+p.pct.toFixed(1)+'%</b> ('+(diff>0?'+':'')+diff.toFixed(1)+')');
+                        }
+                    }else{
+                        ch.textContent='–';ch.className='pt-change neutral';
+                    }
+
+                    // Re-order in DOM
+                    ptEl.appendChild(row);
+                });
+
+                // Blocs
+                var rS=0,rP=0,bS=0,bP=0,mS=0,mP=0;
+                parties.forEach(function(p){
+                    if(redBloc.indexOf(p.id)!==-1){rS+=p.seats;rP+=p.pct}
+                    else if(blueBloc.indexOf(p.id)!==-1){bS+=p.seats;bP+=p.pct}
+                    if(p.id==='M'){mS=p.seats;mP=p.pct}
+                });
+
+                document.getElementById('redSeats').textContent=rS;
+                document.getElementById('blueSeats').textContent=bS;
+                document.getElementById('mSeats').textContent=mS;
+                document.getElementById('redPct').textContent=rP.toFixed(1)+'%';
+                document.getElementById('bluePct').textContent=bP.toFixed(1)+'%';
+                document.getElementById('bbRed').style.width=rP+'%';
+                document.getElementById('bbM').style.width=mP+'%';
+                document.getElementById('bbBlue').style.width=bP+'%';
+
+                // Seat chart
+                seatChart.data.datasets[0].data=parties.map(function(p){return p.seats});
+                seatChart.update('none');
+            }
+        }
+
+        // Storkredse
+        var pollingDone=0;
+        for(var i=1;i<=10;i++){
+            try{
+                var sr=await fetch(DR+'FV2026-geography-results/storkreds-'+i);
+                if(!sr.ok)continue;
+                var sj=await sr.json();
+                var sf=sj.fields;
+                var sc=exf(sf,'CountedPct')||0;
+                var st=exf(sf,'ResultType')||'Setup';
+                var subDone=exf(sf,'CountedSubGeographies')||exf(sf,'SubGeographiesCounted')||0;
+                var subTotal=exf(sf,'NumberOfSubGeographies')||exf(sf,'SubGeographiesTotal')||0;
+                pollingDone+=subDone;
+
+                var ski=document.getElementById('ski-'+i);
+                if(ski){
+                    ski.querySelector('.sk-bf').style.width=sc+'%';
+                    ski.querySelector('.sk-p').textContent=sc.toFixed(2)+'%';
+                    if(subTotal>0)ski.querySelector('.sk-n').textContent=skNames[i-1]+' ('+subDone+'/'+subTotal+')';
+                    if(st==='Final'){ski.classList.add('done')}
+                    else{ski.classList.remove('done')}
+
+                    // Feed when storkreds completes
+                    if(st==='Final'&&!ski.dataset.notified){
+                        ski.dataset.notified='1';
+                        addFeed('<b>'+skNames[i-1]+'</b> er færdigoptalt!',true);
+                    }
+                }
+            }catch(e){}
+        }
+
+        if(pollingDone!==totalPollingDone&&pollingDone>0){
+            document.getElementById('csDetail').textContent=pollingDone+' valgsteder';
+            if(pollingDone>totalPollingDone+5){
+                addFeed(pollingDone+' valgsteder nu optalt (+' +(pollingDone-totalPollingDone)+')');
+            }
+            totalPollingDone=pollingDone;
+        }
+
+    }catch(err){
+        addFeed('Fejl: '+err.message);
+    }
+}
+
+// ====== START ======
+fetchAll();
+setInterval(fetchAll,INTERVAL);
+
+// Update ticker with latest data periodically
+setInterval(function(){
+    var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
+    var txt=sorted.filter(function(p){return p.pct>0}).map(function(p){return p.id+' '+p.pct.toFixed(1)+'%'}).join(' · ');
+    if(txt){
+        var track=document.getElementById('ticker');
+        track.innerHTML='<span>'+txt+'</span><span>'+prevCountedPct.toFixed(2)+'% optalt · '+totalPollingDone+' valgsteder</span><span>'+txt+'</span><span>'+prevCountedPct.toFixed(2)+'% optalt · '+totalPollingDone+' valgsteder</span>';
+    }
+},30000);
+</script>
+
+</body>
+</html>
