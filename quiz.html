@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valgquiz 2026 – Jeopardy!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0a0e1a;
+            color: #e0e4ef;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #101d2f 0%, #1a2744 100%);
+            border-bottom: 3px solid #c8102e;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .header h1 span { color: #c8102e; }
+
+        .scoreboard {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .score-label {
+            font-size: 13px;
+            color: #8892a8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffd15c;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Jeopardy board */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, #1a2744, #253560);
+            border-radius: 10px;
+            padding: 16px 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell {
+            background: linear-gradient(135deg, #1a2050, #222e5a);
+            border-radius: 10px;
+            padding: 20px 10px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffd15c;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            border: 2px solid transparent;
+        }
+
+        .cell:hover {
+            background: linear-gradient(135deg, #253070, #2e3e7a);
+            border-color: #ffd15c;
+            transform: scale(1.03);
+        }
+
+        .cell.used {
+            background: #0d1222;
+            color: #1e2640;
+            cursor: default;
+            border-color: transparent;
+            transform: none;
+        }
+
+        .cell.used:hover {
+            transform: none;
+            border-color: transparent;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.92);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: linear-gradient(135deg, #141a2e, #1a2550);
+            border: 2px solid #ffd15c;
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 700px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 80px rgba(255, 209, 92, 0.1);
+        }
+
+        .modal-points {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffd15c;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-category {
+            font-size: 13px;
+            color: #8892a8;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-question {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.5;
+            margin-bottom: 32px;
+        }
+
+        .modal-answer {
+            display: none;
+            background: #0d1222;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #1e2640;
+        }
+
+        .modal-answer.show { display: block; }
+
+        .modal-answer-label {
+            font-size: 11px;
+            color: #8892a8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .modal-answer-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2dc84d;
+            line-height: 1.4;
+        }
+
+        .modal-answer-detail {
+            font-size: 13px;
+            color: #8892a8;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-reveal {
+            background: #ffd15c;
+            color: #0a0e1a;
+        }
+        .btn-reveal:hover { background: #ffe08a; }
+
+        .btn-correct {
+            background: #2dc84d;
+            color: #fff;
+        }
+        .btn-correct:hover { background: #3dd85d; }
+
+        .btn-wrong {
+            background: #c8102e;
+            color: #fff;
+        }
+        .btn-wrong:hover { background: #e8203e; }
+
+        .btn-close {
+            background: #1e2640;
+            color: #8892a8;
+        }
+        .btn-close:hover { background: #2a3455; color: #fff; }
+
+        /* Final score */
+        .final-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(12px);
+        }
+
+        .final-overlay.active { display: flex; }
+
+        .final-card {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .final-label {
+            font-size: 14px;
+            color: #8892a8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .final-score {
+            font-size: 80px;
+            font-weight: 800;
+            color: #ffd15c;
+            line-height: 1;
+        }
+
+        .final-max {
+            font-size: 18px;
+            color: #5a6280;
+            margin-top: 8px;
+            margin-bottom: 24px;
+        }
+
+        .final-msg {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 32px;
+        }
+
+        .btn-reset {
+            background: #ffd15c;
+            color: #0a0e1a;
+            padding: 14px 36px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-reset:hover { background: #ffe08a; }
+
+        .progress-bar {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .progress-track {
+            width: 200px;
+            height: 6px;
+            background: #1e2640;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #ffd15c;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #5a6280;
+        }
+
+        @media (max-width: 700px) {
+            .board { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+            .category-header { font-size: 10px; padding: 10px 4px; min-height: 50px; }
+            .cell { font-size: 18px; min-height: 55px; padding: 10px 4px; }
+            .modal { padding: 28px 20px; }
+            .modal-question { font-size: 18px; }
+            .header { padding: 14px 20px; }
+            .header h1 { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Valgquiz <span>2026</span> – Jeopardy!</h1>
+    <div class="scoreboard">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="board" id="board"></div>
+    <div class="progress-bar">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 25</div>
+    </div>
+</div>
+
+<!-- Question modal -->
+<div class="modal-overlay" id="questionModal">
+    <div class="modal">
+        <div class="modal-points" id="qPoints"></div>
+        <div class="modal-category" id="qCategory"></div>
+        <div class="modal-question" id="qText"></div>
+        <div class="modal-answer" id="qAnswer">
+            <div class="modal-answer-label">Svaret er:</div>
+            <div class="modal-answer-text" id="qAnswerText"></div>
+            <div class="modal-answer-detail" id="qAnswerDetail"></div>
+        </div>
+        <div class="btn-row" id="btnRow">
+            <button class="btn btn-reveal" id="btnReveal" onclick="revealAnswer()">Vis svar</button>
+        </div>
+        <div class="btn-row" id="btnScore" style="display:none;">
+            <button class="btn btn-correct" onclick="scoreAnswer(true)">Rigtigt!</button>
+            <button class="btn btn-wrong" onclick="scoreAnswer(false)">Forkert</button>
+        </div>
+    </div>
+</div>
+
+<!-- Final score -->
+<div class="final-overlay" id="finalOverlay">
+    <div class="final-card">
+        <div class="final-label">Din endelige score</div>
+        <div class="final-score" id="finalScore">0</div>
+        <div class="final-max">ud af 7.500 point</div>
+        <div class="final-msg" id="finalMsg"></div>
+        <button class="btn-reset" onclick="resetGame()">Spil igen</button>
+    </div>
+</div>
+
+<script>
+// ====== QUIZ DATA ======
+const categories = [
+    {
+        name: 'Partiledere',
+        questions: [
+            { q: 'Denne partileder stillede op som statsministerkandidat for Socialdemokraterne.', a: 'Hvem er Mette Frederiksen?', detail: 'Statsminister siden 2019, går efter sin tredje periode.' },
+            { q: 'Denne tidligere minister stiftede Danmarksdemokraterne og blev partileder.', a: 'Hvem er Inger Støjberg?', detail: 'Stiftede partiet i 2022 efter at have forladt Venstre.' },
+            { q: 'Denne Liberal Alliance-leder blev det største blå partis frontfigur i 2026.', a: 'Hvem er Alex Vanopslagh?', detail: 'LA voksede til ca. 11% og blev blå bloks største parti.' },
+            { q: 'Denne politiske veteran stiftede Moderaterne og blev udenrigsminister i SVM-regeringen.', a: 'Hvem er Lars Løkke Rasmussen?', detail: 'Tidligere statsminister for Venstre, stiftede M i 2022.' },
+            { q: 'Denne partileder overtog Konservative efter Søren Pape Poulsens afgang.', a: 'Hvem er Mona Juul?', detail: 'Blev valgt som formand for Det Konservative Folkeparti.' },
+        ]
+    },
+    {
+        name: 'Tal & mandater',
+        questions: [
+            { q: 'Så mange mandater kræves for flertal i Folketinget.', a: 'Hvad er 90 mandater?', detail: 'Folketinget har 179 mandater, heraf 4 fra Grønland og Færøerne.' },
+            { q: 'Denne procentgrænse skal partier over for at komme i Folketinget.', a: 'Hvad er 2%?', detail: 'Spærregrænsen har eksisteret siden 1920.' },
+            { q: 'Socialdemokraterne stod til ca. dette antal mandater ifølge den seneste måling.', a: 'Hvad er ca. 38 mandater?', detail: 'Med ca. 22% af stemmerne, det største enkeltparti.' },
+            { q: 'SVM-regeringen havde dette antal mandater bag sig i Folketinget.', a: 'Hvad er 89 mandater?', detail: 'Præcis halvdelen af de 179 – altså et mindretal.' },
+            { q: 'Så mange storkredse er Danmark opdelt i ved et folketingsvalg.', a: 'Hvad er 10 storkredse?', detail: 'Fra København til Nordjylland, plus 3 landsdele.' },
+        ]
+    },
+    {
+        name: 'Grønland & Trump',
+        questions: [
+            { q: 'Denne amerikanske præsident truede med at annektere Grønland.', a: 'Hvem er Donald Trump?', detail: 'Truslen inkluderede militær magt og 25% told på danske varer.' },
+            { q: 'Danmark indgik aftale med dette EU-land om nuklear afskrækkelse.', a: 'Hvad er Frankrig?', detail: 'En historisk aftale som reaktion på det ændrede sikkerhedsbillede.' },
+            { q: 'Danmark besluttede at hæve forsvarsbudgettet til denne procentdel af BNP.', a: 'Hvad er 3,5%?', detail: 'Langt over NATOs 2%-målsætning, drevet af Grønlandskrisen.' },
+            { q: 'Denne danske statsminister vandt folkelig opbakning ved at stå imod Trumps trusler.', a: 'Hvem er Mette Frederiksen?', detail: 'Hendes håndtering af krisen blev en central del af valgkampen.' },
+            { q: 'Trump truede med at pålægge denne toldsats på danske varer.', a: 'Hvad er 25%?', detail: 'En del af presset for at få Danmark til at opgive Grønland.' },
+        ]
+    },
+    {
+        name: 'Rød vs Blå',
+        questions: [
+            { q: 'Dette parti blev kaldt "kingmaker" fordi ingen blok kunne danne flertal uden dem.', a: 'Hvad er Moderaterne?', detail: 'Med ca. 7% og 11-12 mandater holdt de nøglen til magten.' },
+            { q: 'Rød blok bestod af disse fem partibogstaver.', a: 'Hvad er A, F, Ø, B og Å?', detail: 'Socialdemokraterne, SF, Enhedslisten, Radikale og Alternativet.' },
+            { q: 'Denne blok førte i meningsmålingerne med ca. 48% mod 45%.', a: 'Hvad er rød blok?', detail: 'En føring på ca. 3 procentpoint ifølge Voxmeter 23. marts.' },
+            { q: 'Venstre stod til dette historisk dårlige resultat i procent.', a: 'Hvad er ca. 8-10%?', detail: 'Et af Venstres dårligste resultater nogensinde.' },
+            { q: 'Dette blå parti overhalede Venstre som blå bloks største.', a: 'Hvad er Liberal Alliance?', detail: 'Med ca. 11% mod Venstres 9% – en historisk ændring.' },
+        ]
+    },
+    {
+        name: 'Valgkampen',
+        questions: [
+            { q: 'Socialdemokraterne kampagnerede på maks dette antal elever i indskolingen.', a: 'Hvad er 14 elever?', detail: 'Et centralt valgløfte om folkeskolens kvalitet.' },
+            { q: 'Radikale Venstre foreslog at halvere denne produktion over 10 år.', a: 'Hvad er svineproduktionen?', detail: 'Et kontroversielt forslag for miljø og grundvand.' },
+            { q: 'SVM-regeringen bestod af disse tre partier.', a: 'Hvad er S, V og M?', detail: 'Socialdemokraterne, Venstre og Moderaterne – en bred centerregering.' },
+            { q: 'Valget blev udskrevet denne dato i 2026.', a: 'Hvad er 26. februar?', detail: 'Udskrevet af statsminister Mette Frederiksen.' },
+            { q: 'Flere partier ville bryde med denne automatisk stigende aldersgrænse.', a: 'Hvad er pensionsalderen?', detail: 'Et varmt emne efter den blev koblet til levealderen.' },
+        ]
+    },
+];
+
+const pointValues = [100, 200, 300, 400, 500];
+let score = 0;
+let answered = 0;
+const total = 25;
+let currentPoints = 0;
+
+// ====== BUILD BOARD ======
+const board = document.getElementById('board');
+
+// Category headers
+categories.forEach(cat => {
+    const header = document.createElement('div');
+    header.className = 'category-header';
+    header.textContent = cat.name;
+    board.appendChild(header);
+});
+
+// Question cells
+for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.textContent = pointValues[row];
+        cell.dataset.col = col;
+        cell.dataset.row = row;
+        cell.addEventListener('click', () => openQuestion(col, row, cell));
+        board.appendChild(cell);
+    }
+}
+
+// ====== GAME LOGIC ======
+function openQuestion(col, row, cell) {
+    if (cell.classList.contains('used')) return;
+
+    const cat = categories[col];
+    const q = cat.questions[row];
+    currentPoints = pointValues[row];
+
+    document.getElementById('qPoints').textContent = currentPoints + ' point';
+    document.getElementById('qCategory').textContent = cat.name;
+    document.getElementById('qText').textContent = q.q;
+    document.getElementById('qAnswerText').textContent = q.a;
+    document.getElementById('qAnswerDetail').textContent = q.detail;
+
+    document.getElementById('qAnswer').classList.remove('show');
+    document.getElementById('btnReveal').style.display = '';
+    document.getElementById('btnRow').style.display = '';
+    document.getElementById('btnScore').style.display = 'none';
+
+    document.getElementById('questionModal').classList.add('active');
+
+    cell.classList.add('used');
+    cell.textContent = '';
+}
+
+function revealAnswer() {
+    document.getElementById('qAnswer').classList.add('show');
+    document.getElementById('btnReveal').style.display = 'none';
+    document.getElementById('btnScore').style.display = 'flex';
+}
+
+function scoreAnswer(correct) {
+    if (correct) {
+        score += currentPoints;
+    }
+    answered++;
+
+    document.getElementById('score').textContent = score.toLocaleString('da-DK');
+    document.getElementById('progressFill').style.width = (answered / total * 100) + '%';
+    document.getElementById('progressText').textContent = answered + ' / ' + total;
+
+    document.getElementById('questionModal').classList.remove('active');
+
+    if (answered >= total) {
+        setTimeout(showFinal, 500);
+    }
+}
+
+function showFinal() {
+    document.getElementById('finalScore').textContent = score.toLocaleString('da-DK');
+
+    let msg = '';
+    const pct = score / 7500 * 100;
+    if (pct >= 90) msg = 'Politisk ekspert! Du kender dansk politik til fingerspidserne.';
+    else if (pct >= 70) msg = 'Stærkt! Du er klar til valgaften.';
+    else if (pct >= 50) msg = 'Godkendt! Du ved mere end de fleste.';
+    else if (pct >= 30) msg = 'Der er plads til forbedring – men du er med!';
+    else msg = 'Måske tid til at tænde DR og følge med?';
+
+    document.getElementById('finalMsg').textContent = msg;
+    document.getElementById('finalOverlay').classList.add('active');
+}
+
+function resetGame() {
+    score = 0;
+    answered = 0;
+    currentPoints = 0;
+
+    document.getElementById('score').textContent = '0';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressText').textContent = '0 / 25';
+    document.getElementById('finalOverlay').classList.remove('active');
+
+    const cells = document.querySelectorAll('.cell');
+    let idx = 0;
+    for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 5; col++) {
+            cells[idx].classList.remove('used');
+            cells[idx].textContent = pointValues[row];
+            idx++;
+        }
+    }
+}
+
+// Escape to close
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        document.getElementById('questionModal').classList.remove('active');
+    }
+});
+</script>
+
+</body>
+</html>
