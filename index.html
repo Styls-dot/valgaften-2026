@@ -563,6 +563,17 @@
 
 <div class="container">
 
+    <!-- COUNTDOWN TIL EXIT POLL -->
+    <div id="countdownBanner" style="background:linear-gradient(135deg, #1a1030, #141a2e); border:1px solid #2a2050; border-radius:12px; padding:20px 24px; margin-bottom:20px; text-align:center;">
+        <div style="font-size:12px; color:#8892a8; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Første exit poll kl. 20:00</div>
+        <div id="countdown" style="font-size:48px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; letter-spacing:2px;"></div>
+        <div style="display:flex; justify-content:center; gap:40px; margin-top:4px;">
+            <span style="font-size:11px; color:#5a6280;">TIMER</span>
+            <span style="font-size:11px; color:#5a6280;">MIN</span>
+            <span style="font-size:11px; color:#5a6280;">SEK</span>
+        </div>
+    </div>
+
     <!-- OPTÆLLINGSSTATUS -->
     <div id="countingBanner" style="background:#141a2e; border:1px solid #1e2640; border-radius:12px; padding:16px 24px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div style="display:flex; align-items:center; gap:12px;">
@@ -1141,6 +1152,38 @@ new Chart(document.getElementById('trendChart'), {
         }
     }
 });
+
+// ====== COUNTDOWN TIL KL. 20:00 ======
+const exitPollTime = new Date('2026-03-24T20:00:00+01:00');
+const countdownEl = document.getElementById('countdown');
+const countdownBanner = document.getElementById('countdownBanner');
+
+function updateCountdown() {
+    const now = new Date();
+    const diff = exitPollTime - now;
+
+    if (diff <= 0) {
+        countdownBanner.style.background = 'linear-gradient(135deg, #1a2015, #141a2e)';
+        countdownBanner.style.borderColor = '#2a5020';
+        countdownEl.textContent = 'VALGSTEDERNE ER LUKKET';
+        countdownEl.style.fontSize = '28px';
+        countdownEl.style.color = '#2dc84d';
+        document.querySelector('#countdownBanner > div:last-child').style.display = 'none';
+        return;
+    }
+
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    countdownEl.textContent =
+        String(h).padStart(2, '0') + ' : ' +
+        String(m).padStart(2, '0') + ' : ' +
+        String(s).padStart(2, '0');
+}
+
+updateCountdown();
+setInterval(updateCountdown, 1000);
 
 // ====== LIVE DATA FRA DR's FIRESTORE API ======
 const DR_API = 'https://firestore.googleapis.com/v1/projects/drdk-portal-valhal-prod/databases/(default)/documents/';
