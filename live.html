@@ -194,6 +194,7 @@
     <div class="counted-mini">
         <div><b id="topCounted">0,00%</b> optalt</div>
         <div id="topType" style="font-size:10px;color:#e84060;">EXIT POLL</div>
+        <div id="lastUpdate" style="font-size:9px;color:#5a6280;margin-top:1px;">Henter data...</div>
     </div>
 </div>
 
@@ -250,7 +251,7 @@
     </div>
 
     <!-- PARTI TABLE -->
-    <div class="section-h">Partier</div>
+    <div class="section-h">Partier <span style="font-weight:400;color:#3a4a5a;font-size:9px;letter-spacing:0;text-transform:none;margin-left:8px">vs FV2022 yderst til højre</span></div>
     <div class="party-table" id="partyTable"></div>
 
     <!-- STORKREDSE -->
@@ -335,7 +336,8 @@ parties.forEach(function(p){
         '<div class="pt-pct" style="color:'+p.color+'">–</div>'+
         '<div class="pt-change neutral">–</div>'+
         '<div class="pt-seats">–</div>'+
-        '<div class="pt-votes"></div>';
+        '<div class="pt-votes"></div>'+
+        '<div class="pt-vs22" style="width:55px;text-align:right;font-size:10px;flex-shrink:0;font-variant-numeric:tabular-nums;color:#5a6280">FV22</div>';
     ptEl.appendChild(row);
 });
 
@@ -439,11 +441,82 @@ function showMegaFlash(opts){
     setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},4300);
 }
 
+// ====== FV2022 RESULTATER (sammenligning) ======
+var fv2022={A:27.5,B:3.8,C:5.4,F:8.3,I:7.9,M:9.3,O:2.6,V:13.3,'Æ':8.1,'Ø':5.1,'Å':3.3,H:3.7};
+
 // Track previous bloc lead
 var prevBlocLead='';
 var prevPartyOrder=[];
 var prevSpærre={};
 parties.forEach(function(p){prevSpærre[p.id]=true});
+
+// ====== VALGSTED SCANNING ======
+var knownValgsteder={};
+var valgstedQueue=[];
+
+async function scanValgsteder(){
+    try{
+        // Firestore structured query: find afstemningsomraader with results
+        var body={structuredQuery:{
+            from:[{collectionId:'FV2026-geography-results'}],
+            where:{compositeFilter:{op:'AND',filters:[
+                {fieldFilter:{field:{fieldPath:'GeographyType'},op:'EQUAL',value:{stringValue:'AfstemningsOmraade'}}},
+                {fieldFilter:{field:{fieldPath:'ResultType'},op:'NOT_EQUAL',value:{stringValue:'Setup'}}}
+            ]}},
+            orderBy:[{field:{fieldPath:'ResultType'},direction:'ASCENDING'},{field:{fieldPath:'DocumentUpdated'},direction:'DESCENDING'}],
+            limit:50
+        }};
+        var res=await fetch(DR+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if(!res.ok)return;
+        var data=await res.json();
+        if(!Array.isArray(data))return;
+
+        data.forEach(function(item){
+            if(!item.document)return;
+            var f=item.document.fields;
+            var id=exf(f,'Id')||exf(f,'GeographyKey')||'';
+            var name=exf(f,'FullGeographyName')||exf(f,'GeographyName')||id;
+            var counted=exf(f,'CountedPct')||0;
+            var rType=exf(f,'ResultType')||'';
+            var votes=exf(f,'TotalReceivedVotes')||0;
+            var leading=exf(f,'LeadingPartyLetter')||'';
+
+            if(id&&!knownValgsteder[id]){
+                knownValgsteder[id]=true;
+
+                // Sammenlign med 2022
+                var pr=exf(f,'PartyResults');
+                var comparison='';
+                if(pr&&Array.isArray(pr)){
+                    var topChanges=[];
+                    pr.forEach(function(entry){
+                        var ef=entry.mapValue?entry.mapValue.fields:null;
+                        if(!ef)return;
+                        var pf=ef.Party?(ef.Party.mapValue?ef.Party.mapValue.fields:ef):ef;
+                        var letter=exf(pf,'Letter')||exf(ef,'Letter');
+                        var pct=exf(ef,'VotesSharePct')||0;
+                        if(letter&&fv2022[letter]!==undefined&&pct>0){
+                            var diff=pct-fv2022[letter];
+                            if(Math.abs(diff)>=2){
+                                topChanges.push(letter+' '+(diff>0?'+':'')+diff.toFixed(1));
+                            }
+                        }
+                    });
+                    if(topChanges.length>0)comparison=topChanges.join(', ')+' vs. FV2022';
+                }
+
+                var detail=fmt(votes)+' stemmer'+(leading?' · '+leading+' størst':'');
+                if(comparison)detail+='<br>'+comparison;
+
+                showPopup({type:'storkreds',icon:'🗳️',tag:'Valgsted optalt',title:name,detail:detail});
+                addFeed('🗳️ <b>'+name+'</b> optalt'+(leading?' – '+leading+' størst':''));
+            }
+        });
+    }catch(e){
+        // Silently fail - structured query might not be supported
+        console.log('Valgsted scan:',e.message);
+    }
+}
 
 // ====== LIVE FETCH ======
 async function fetchAll(){
@@ -537,6 +610,14 @@ async function fetchAll(){
                         }
                     }else{
                         ch.textContent='–';ch.className='pt-change neutral';
+                    }
+
+                    // FV2022 comparison
+                    var vs22=row.querySelector('.pt-vs22');
+                    if(p.pct>0&&fv2022[p.id]!==undefined){
+                        var d22=p.pct-fv2022[p.id];
+                        vs22.textContent=(d22>0?'+':'')+d22.toFixed(1);
+                        vs22.style.color=d22>0?'#2dc84d':(d22<-0.5?'#e84060':'#5a6280');
                     }
 
                     // Re-order in DOM
@@ -654,6 +735,12 @@ async function fetchAll(){
             }
             totalPollingDone=pollingDone;
         }
+
+        // Scan individuelle valgsteder
+        await scanValgsteder();
+
+        // Senest opdateret
+        document.getElementById('lastUpdate').textContent='Opdateret '+ts();
 
     }catch(err){
         addFeed('Fejl: '+err.message);
