@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morten & Dot Quiz – Den Ultimative Kærlighedstest</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0a0e1a;
+            color: #e0e4ef;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2a1020 0%, #1a0a18 50%, #2a1020 100%);
+            border-bottom: 3px solid #e4007e;
+            padding: 16px 40px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .header h1 { font-size: 22px; font-weight: 800; color: #fff; }
+        .header h1 span { color: #e4007e; }
+        .header .subtitle { font-size: 11px; color: #8a5070; letter-spacing: 1px; text-transform: uppercase; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* PLAYERS */
+        .players { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+
+        .player-card {
+            background: #1a1028; border: 2px solid #2a1840; border-radius: 14px;
+            padding: 16px 20px; text-align: center; transition: all 0.3s; cursor: pointer;
+        }
+
+        .player-card.active { box-shadow: 0 0 20px rgba(228, 0, 126, 0.15); }
+        .player-card.p1.active { border-color: #e4007e; }
+        .player-card.p2.active { border-color: #ffd15c; }
+        .player-card.p3.active { border-color: #00bce4; }
+
+        .player-card .player-indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+        .p1 .player-indicator { background: #e4007e; }
+        .p2 .player-indicator { background: #ffd15c; }
+        .p3 .player-indicator { background: #00bce4; }
+
+        .player-card .player-name { font-size: 15px; font-weight: 700; color: #fff; display: inline; vertical-align: middle; }
+        .player-card .player-score { font-size: 32px; font-weight: 800; margin-top: 6px; font-variant-numeric: tabular-nums; }
+        .p1 .player-score { color: #e4007e; }
+        .p2 .player-score { color: #ffd15c; }
+        .p3 .player-score { color: #00bce4; }
+
+        .player-card .player-turn { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #5a4060; margin-top: 4px; height: 16px; }
+        .player-card.active .player-turn { color: #e4007e; }
+
+        /* BOARD */
+        .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+
+        .category-header {
+            background: linear-gradient(135deg, #2a1040, #3a1855);
+            border-radius: 10px; padding: 14px 8px; text-align: center;
+            font-size: 11px; font-weight: 700; color: #fff;
+            text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.3;
+            min-height: 60px; display: flex; align-items: center; justify-content: center;
+        }
+
+        .cell {
+            background: linear-gradient(135deg, #2a1045, #3a1860);
+            border-radius: 10px; padding: 16px 8px; text-align: center;
+            font-size: 26px; font-weight: 800; color: #e4007e;
+            cursor: pointer; transition: all 0.2s; min-height: 68px;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none; border: 2px solid transparent;
+        }
+
+        .cell:hover { background: linear-gradient(135deg, #3a1860, #4a2075); border-color: #e4007e; transform: scale(1.03); }
+        .cell.used { background: #0d0a14; color: #1a1028; cursor: default; border-color: transparent; transform: none; }
+        .cell.used:hover { transform: none; border-color: transparent; }
+
+        .progress-bar { margin-top: 16px; display: flex; align-items: center; gap: 12px; justify-content: center; }
+        .progress-track { width: 200px; height: 6px; background: #1a1028; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #e4007e; border-radius: 3px; transition: width 0.5s ease; }
+        .progress-text { font-size: 12px; color: #5a4060; }
+
+        /* SETUP */
+        .setup-overlay { position: fixed; inset: 0; background: rgba(10, 8, 18, 0.97); z-index: 3000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
+        .setup-overlay.hidden { display: none; }
+
+        .setup-card { background: #1a1028; border: 2px solid #2a1840; border-radius: 24px; padding: 48px; max-width: 500px; width: 90%; text-align: center; }
+        .setup-card h2 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .setup-card h2 span { color: #e4007e; }
+        .setup-card .setup-sub { font-size: 13px; color: #8a5070; margin-bottom: 8px; }
+        .setup-card p { font-size: 14px; color: #6a5080; margin-bottom: 32px; line-height: 1.5; }
+
+        .setup-input-group { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .setup-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+        .setup-input { flex: 1; padding: 12px 16px; background: #0d0a14; border: 1px solid #2a1840; border-radius: 10px; color: #fff; font-family: inherit; font-size: 15px; font-weight: 600; outline: none; transition: border-color 0.2s; }
+        .setup-input:focus { border-color: #e4007e; }
+        .setup-input::placeholder { color: #3a2840; }
+
+        .setup-btn { margin-top: 24px; padding: 14px 48px; background: #e4007e; color: #fff; border: none; border-radius: 12px; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer; transition: background 0.2s; }
+        .setup-btn:hover { background: #ff1a9a; }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10, 8, 18, 0.92); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal-overlay.active { display: flex; }
+
+        .modal { background: linear-gradient(135deg, #1a1028, #2a1550); border: 2px solid #e4007e; border-radius: 24px; padding: 40px; max-width: 700px; width: 90%; text-align: center; position: relative; box-shadow: 0 0 80px rgba(228, 0, 126, 0.15); }
+
+        .modal-points { font-size: 16px; font-weight: 700; color: #e4007e; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .modal-category { font-size: 12px; color: #8a5070; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-question { font-size: 22px; font-weight: 600; color: #fff; line-height: 1.5; margin-bottom: 28px; }
+
+        .modal-answer { display: none; background: #0d0a14; border-radius: 14px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a1840; }
+        .modal-answer.show { display: block; }
+        .modal-answer-label { font-size: 11px; color: #8a5070; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .modal-answer-text { font-size: 18px; font-weight: 700; color: #e4007e; line-height: 1.4; }
+        .modal-answer-detail { font-size: 13px; color: #8a5070; margin-top: 8px; line-height: 1.5; font-style: italic; }
+
+        .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 11px 24px; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-reveal { background: #e4007e; color: #fff; }
+        .btn-reveal:hover { background: #ff1a9a; }
+
+        .player-btn-row { display: none; flex-direction: column; gap: 10px; align-items: center; }
+        .player-btn-row.show { display: flex; }
+        .player-btn-row .label { font-size: 11px; color: #8a5070; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .player-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+        .btn-player { padding: 12px 24px; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid; background: transparent; transition: all 0.2s; min-width: 120px; }
+        .btn-player:hover { transform: scale(1.05); }
+        .btn-player.bp1 { color: #e4007e; border-color: #e4007e; }
+        .btn-player.bp1:hover { background: #e4007e; color: #fff; }
+        .btn-player.bp2 { color: #ffd15c; border-color: #ffd15c; }
+        .btn-player.bp2:hover { background: #ffd15c; color: #0a0e1a; }
+        .btn-player.bp3 { color: #00bce4; border-color: #00bce4; }
+        .btn-player.bp3:hover { background: #00bce4; color: #0a0e1a; }
+
+        .btn-nobody { padding: 10px 20px; border-radius: 10px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; background: #1a1028; color: #8a5070; border: none; margin-top: 4px; }
+        .btn-nobody:hover { background: #2a1840; color: #fff; }
+
+        /* FINAL */
+        .final-overlay { display: none; position: fixed; inset: 0; background: rgba(10, 8, 18, 0.95); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
+        .final-overlay.active { display: flex; }
+        .final-card { text-align: center; padding: 48px; max-width: 600px; width: 90%; }
+        .final-title { font-size: 14px; color: #8a5070; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 32px; }
+
+        .podium { display: flex; align-items: flex-end; justify-content: center; gap: 16px; margin-bottom: 40px; }
+        .podium-place { text-align: center; border-radius: 16px; padding: 20px 24px; min-width: 140px; }
+        .podium-place.first { background: linear-gradient(135deg, #2a1020, #1a0a18); border: 2px solid #e4007e; order: 2; }
+        .podium-place.second { background: #1a1028; border: 2px solid #8a5070; order: 1; }
+        .podium-place.third { background: #1a1028; border: 2px solid #4a3040; order: 3; }
+        .podium-rank { font-size: 32px; margin-bottom: 4px; }
+        .podium-name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .podium-score { font-size: 28px; font-weight: 800; }
+        .podium-place.first .podium-score { color: #e4007e; }
+        .podium-place.second .podium-score { color: #8a5070; }
+        .podium-place.third .podium-score { color: #4a3040; }
+
+        .btn-reset { background: #e4007e; color: #fff; padding: 14px 36px; border-radius: 12px; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; border: none; }
+        .btn-reset:hover { background: #ff1a9a; }
+
+        @media (max-width: 700px) {
+            .board { gap: 4px; }
+            .category-header { font-size: 9px; padding: 8px 4px; min-height: 45px; }
+            .cell { font-size: 16px; min-height: 50px; padding: 8px 4px; }
+            .modal { padding: 24px 16px; }
+            .modal-question { font-size: 16px; }
+            .header { padding: 12px 16px; }
+            .header h1 { font-size: 16px; }
+            .players { gap: 6px; }
+            .player-card { padding: 10px 8px; }
+            .player-card .player-score { font-size: 24px; }
+            .podium-place { min-width: 100px; padding: 14px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div class="setup-overlay" id="setupOverlay">
+    <div class="setup-card">
+        <h2>Morten <span>&</span> Dot</h2>
+        <div class="setup-sub">Den Ultimative Kærlighedsquiz</div>
+        <p>Hvor godt kender du Danmarks mest passionerede par?<br>25 spørgsmål. 3 spillere. Ingen nåde.</p>
+        <div class="setup-input-group">
+            <div class="setup-dot" style="background:#e4007e"></div>
+            <input class="setup-input" id="nameP1" placeholder="Spiller 1" maxlength="20">
+        </div>
+        <div class="setup-input-group">
+            <div class="setup-dot" style="background:#ffd15c"></div>
+            <input class="setup-input" id="nameP2" placeholder="Spiller 2" maxlength="20">
+        </div>
+        <div class="setup-input-group">
+            <div class="setup-dot" style="background:#00bce4"></div>
+            <input class="setup-input" id="nameP3" placeholder="Spiller 3" maxlength="20">
+        </div>
+        <button class="setup-btn" onclick="startGame()">Lad os elske!</button>
+    </div>
+</div>
+
+<div class="header">
+    <div>
+        <h1>Morten <span>&</span> Dot Quiz</h1>
+        <div class="subtitle">Kærlighed, Bakken & Juleplader</div>
+    </div>
+    <div style="font-size:12px; color:#8a5070;" id="turnIndicator"></div>
+</div>
+
+<div class="container">
+    <div class="players">
+        <div class="player-card p1" id="card0" onclick="selectPlayer(0)">
+            <span class="player-indicator"></span><span class="player-name" id="pName0">Spiller 1</span>
+            <div class="player-score" id="pScore0">0</div>
+            <div class="player-turn" id="pTurn0"></div>
+        </div>
+        <div class="player-card p2" id="card1" onclick="selectPlayer(1)">
+            <span class="player-indicator"></span><span class="player-name" id="pName1">Spiller 2</span>
+            <div class="player-score" id="pScore1">0</div>
+            <div class="player-turn" id="pTurn1"></div>
+        </div>
+        <div class="player-card p3" id="card2" onclick="selectPlayer(2)">
+            <span class="player-indicator"></span><span class="player-name" id="pName2">Spiller 3</span>
+            <div class="player-score" id="pScore2">0</div>
+            <div class="player-turn" id="pTurn2"></div>
+        </div>
+    </div>
+
+    <div class="board" id="board"></div>
+    <div class="progress-bar">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 25</div>
+    </div>
+</div>
+
+<!-- QUESTION MODAL -->
+<div class="modal-overlay" id="questionModal">
+    <div class="modal">
+        <div class="modal-points" id="qPoints"></div>
+        <div class="modal-category" id="qCategory"></div>
+        <div class="modal-question" id="qText"></div>
+        <div class="modal-answer" id="qAnswer">
+            <div class="modal-answer-label">Svaret er:</div>
+            <div class="modal-answer-text" id="qAnswerText"></div>
+            <div class="modal-answer-detail" id="qAnswerDetail"></div>
+        </div>
+        <div class="btn-row" id="btnRevealRow">
+            <button class="btn btn-reveal" onclick="revealAnswer()">Vis svar</button>
+        </div>
+        <div class="player-btn-row" id="playerBtnRow">
+            <div class="label">Hvem vidste det?</div>
+            <div class="player-btns">
+                <button class="btn-player bp1" id="btnP0" onclick="awardPoints(0)"></button>
+                <button class="btn-player bp2" id="btnP1" onclick="awardPoints(1)"></button>
+                <button class="btn-player bp3" id="btnP2" onclick="awardPoints(2)"></button>
+            </div>
+            <button class="btn-nobody" onclick="awardPoints(-1)">Ingen anede det</button>
+        </div>
+    </div>
+</div>
+
+<!-- FINAL -->
+<div class="final-overlay" id="finalOverlay">
+    <div class="final-card">
+        <div class="final-title">Quiz slut! Hvem elsker Morten & Dot mest?</div>
+        <div class="podium" id="podium"></div>
+        <button class="btn-reset" onclick="fullReset()">En omgang mere!</button>
+    </div>
+</div>
+
+<script>
+var categories = [
+    {
+        name: 'Kærlighedens Storhed',
+        questions: [
+            { q: 'I dette magiske Tivoli-spisested mødte Morten og Dot hinanden for første gang i april 2007. Forestil dig stearinlys og frikadeller.',
+              a: 'Hvad er Grøften?',
+              detail: 'Ja, Danmarks mest romantiske kærlighedshistorie startede ved et bord med remoulade i nærheden.' },
+            { q: 'Denne aldersforskæl i år adskiller Danmarks mest passionerede par. Spoiler: Dot er den erfarne.',
+              a: 'Hvad er 23 år?',
+              detail: 'Kærlighed kender ingen alder. Men CPR-registret gør.' },
+            { q: 'Den 9. juni 2015 gik Morten og Dot fra hinanden. Men kærligheden var stærkere, og de fandt sammen igen denne dato.',
+              a: 'Hvad er 1. juli 2016?',
+              detail: 'Kun 387 dage fra hinanden. Det er nærmest ingenting i geologisk tid.' },
+            { q: 'Morten og Dot fejrer deres månedlige jubilæum på denne dato hver eneste måned. Ja, HVER måned.',
+              a: 'Hvad er den 18.?',
+              detail: 'Andre par har årsdag. Morten og Dot har 12 om året. Commitment level: Expert.' },
+            { q: 'I dette romantiske land har parret annonceret at de vil giftes. Tænk pasta, vin og EU-skepsis.',
+              a: 'Hvad er Italien?',
+              detail: 'Intet siger "dansk folkeparti" som et italiensk bryllup med udsigt over Toscana.' },
+        ]
+    },
+    {
+        name: 'Julepladen',
+        questions: [
+            { q: 'I dette år udgav Morten og Dot deres legendariske julealbum, der rystede den danske musikscene.',
+              a: 'Hvad er 2008?',
+              detail: 'Et år efter de mødtes. Når kærligheden er frisk, laver man en juleplade. Sådan er det bare.' },
+            { q: 'Titlen på albummet var "Jul i Europa med Morten & Dot". Denne sang handler om at klippe noget sammen – og nej, det er ikke EU-traktaten.',
+              a: 'Hvad er "Skal vi klippe vores julehjerter sammen"?',
+              detail: 'Den mest bogstaveligt romantiske julesang nogensinde indspillet af en partileder.' },
+            { q: 'Denne internationale klassiker med "Let it..." var også med på julepladen. Ironi: Morten vil normalt IKKE lukke grænser op.',
+              a: 'Hvad er "Let It Snow"?',
+              detail: 'Let it snow, men luk porten. Nuancerne i dansk politik, sammenfattet i en julesang.' },
+            { q: 'Denne tyske/østrigske juleklassiker, "Stille...", fik også Morten & Dot-behandlingen.',
+              a: 'Hvad er "Stille Nacht"?',
+              detail: 'Stille nacht, heilige nacht. Stille er sjældent et ord man forbinder med Messerschmidt i Folketingssalen.' },
+            { q: 'Denne latinamerikanske festsang af José Feliciano rundede julepladen af med sydeuropæisk schwung.',
+              a: 'Hvad er "Feliz Navidad"?',
+              detail: 'Morten synger på spansk. Dot synger på Bakken. Sammen synger de i vores hjerter.' },
+        ]
+    },
+    {
+        name: 'Bakken & Showbiz',
+        questions: [
+            { q: 'Dot ejer og optræder på dette legendariske sted på Dyrehavsbakken, verdens ældste forlystelsespark.',
+              a: 'Hvad er Bakkens Hvile?',
+              detail: 'Dot er dronningen af Bakken. Messerschmidt er kongen af DF. Sammen hersker de over Nordsjælland.' },
+            { q: 'I 2018 deltog parret i dette TV2-program, hvor man handler, pruttes og sælger.',
+              a: 'Hvad er Krejlerkongen?',
+              detail: 'Morten forhandler i Folketinget. Morten forhandler på loppemarked. Manden har range.' },
+            { q: 'Morten og Dot har også deltaget i dette populære TV-danseprogram. Tænk pailletter og paso doble.',
+              a: 'Hvad er Vild med Dans?',
+              detail: 'Fra Christiansborg til dansegulvet. Fra finanslov til foxtrot.' },
+            { q: 'Dots fulde navn er Dot Wessman, og hun er først og fremmest dette af profession.',
+              a: 'Hvad er sanger/entertainer?',
+              detail: 'Revydronningen fra Bakken. Underholder har hun gjort i årtier, længe før Morten lærte at binde slips.' },
+            { q: 'Dyrehavsbakken, hvor Dot regerer, ligger i denne nordsjællandske by tæt på Klampenborg.',
+              a: 'Hvad er Lyngby/Klampenborg-området?',
+              detail: 'Verdens ældste forlystelsespark. Grundlagt ca. 1583. Dot var der IKKE fra starten, trods hvad folk siger.' },
+        ]
+    },
+    {
+        name: 'Morten i Politik',
+        questions: [
+            { q: 'Morten blev formand for dette parti i 2022 efter en noget dramatisk formandskamp.',
+              a: 'Hvad er Dansk Folkeparti?',
+              detail: 'Fra EU-parlamentet til DF-formand. En klassisk dansk karrierevej, hvis man hedder Messerschmidt.' },
+            { q: 'Morten Messerschmidt blev født denne dato i 1980. Skorpion, naturligvis.',
+              a: 'Hvad er 13. november?',
+              detail: '13. november. Et fredag-den-13.-barn. Det forklarer en del.' },
+            { q: 'Før han blev DF-formand, sad Morten i dette europæiske parlament i mange år.',
+              a: 'Hvad er Europa-Parlamentet?',
+              detail: 'Ironien i at en EU-skeptiker havde sit bedste job i EU er aldrig gået tabt på danskerne.' },
+            { q: 'Ved valget 2026 stod Dansk Folkeparti til ca. denne procentdel ifølge Epinion.',
+              a: 'Hvad er ca. 9,5%?',
+              detail: 'En comeback-historie. Fra næsten-døden til næsten-tocifret. Kærlighed giver styrke.' },
+            { q: 'Morten bærer dette partibogstav på sin stemmeseddel.',
+              a: 'Hvad er O?',
+              detail: 'O som i "Oh, sikke en mand" – citat: Dot, formentlig.' },
+        ]
+    },
+    {
+        name: 'Parforhold eller Politik?',
+        questions: [
+            { q: '"Vi gik fra hinanden, men fandt sammen igen efter et år." Er det Morten & Dots forhold, eller SVM-regeringens forhold til vælgerne?',
+              a: 'Hvad er Morten & Dot?',
+              detail: 'Separeret 9. juni 2015, genforenet 1. juli 2016. SVM-regeringen nåede aldrig genforeningen.' },
+            { q: '"Vi fejrer vores jubilæum 12 gange om året." Er dette et parforhold eller en finanslovsforhandling?',
+              a: 'Hvad er Morten & Dots parforhold?',
+              detail: 'Den 18. hver måned. Selv finansloven vedtages kun én gang om året.' },
+            { q: '"Vi lavede en juleplade sammen efter kun ét år." Er dette normalt parforholdsadfærd eller et tegn på genialitet?',
+              a: 'Hvad er begge dele?',
+              detail: '"Jul i Europa med Morten & Dot" (2008). Ét år sammen = juleplade. To år = Eurovision? Tre år = verdensherredømme?' },
+            { q: '"Vi vil giftes i udlandet." Sagde dette et dansk par, eller en EU-politiker der prøver at undgå dansk moms?',
+              a: 'Hvad er Morten & Dot (Italien)?',
+              detail: 'EU-skeptikeren gifter sig i EU. Det er ikke ironi. Det er kærlighed.' },
+            { q: '"23 år er bare et tal." Er dette et citat om aldersforskæl, eller Mortens svar på hvor mange år DF har eksisteret?',
+              a: 'Hvad er aldersforskellen?',
+              detail: 'DF blev stiftet i 1995, så det ville være 31 år i 2026. Men 23 år er Morten og Dots forskel. Kærlighed > matematik.' },
+        ]
+    },
+];
+
+var pointValues = [100, 200, 300, 400, 500];
+var total = 25;
+
+var players = [
+    { name: 'Spiller 1', score: 0 },
+    { name: 'Spiller 2', score: 0 },
+    { name: 'Spiller 3', score: 0 },
+];
+var playerColors = ['#e4007e', '#ffd15c', '#00bce4'];
+var currentPlayer = 0;
+var answered = 0;
+var currentPoints = 0;
+
+document.getElementById('nameP1').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('nameP2').focus(); });
+document.getElementById('nameP2').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('nameP3').focus(); });
+document.getElementById('nameP3').addEventListener('keydown', function(e) { if (e.key === 'Enter') startGame(); });
+
+function startGame() {
+    players[0].name = document.getElementById('nameP1').value.trim() || 'Spiller 1';
+    players[1].name = document.getElementById('nameP2').value.trim() || 'Spiller 2';
+    players[2].name = document.getElementById('nameP3').value.trim() || 'Spiller 3';
+    for (var i = 0; i < 3; i++) {
+        document.getElementById('pName' + i).textContent = players[i].name;
+        document.getElementById('btnP' + i).textContent = players[i].name;
+    }
+    document.getElementById('setupOverlay').classList.add('hidden');
+    updateTurn();
+}
+
+var board = document.getElementById('board');
+categories.forEach(function(cat) {
+    var header = document.createElement('div');
+    header.className = 'category-header';
+    header.textContent = cat.name;
+    board.appendChild(header);
+});
+
+for (var row = 0; row < 5; row++) {
+    for (var col = 0; col < 5; col++) {
+        (function(c, r) {
+            var cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.textContent = pointValues[r];
+            cell.addEventListener('click', function() { openQuestion(c, r, cell); });
+            board.appendChild(cell);
+        })(col, row);
+    }
+}
+
+function selectPlayer(idx) { currentPlayer = idx; updateTurn(); }
+
+function updateTurn() {
+    for (var i = 0; i < 3; i++) {
+        var card = document.getElementById('card' + i);
+        var turn = document.getElementById('pTurn' + i);
+        if (i === currentPlayer) { card.classList.add('active'); turn.textContent = 'Vælger'; }
+        else { card.classList.remove('active'); turn.textContent = ''; }
+    }
+    document.getElementById('turnIndicator').textContent = players[currentPlayer].name + ' vælger';
+}
+
+function openQuestion(col, row, cell) {
+    if (cell.classList.contains('used')) return;
+    var cat = categories[col];
+    var q = cat.questions[row];
+    currentPoints = pointValues[row];
+    document.getElementById('qPoints').textContent = currentPoints + ' point';
+    document.getElementById('qCategory').textContent = cat.name;
+    document.getElementById('qText').textContent = q.q;
+    document.getElementById('qAnswerText').textContent = q.a;
+    document.getElementById('qAnswerDetail').textContent = q.detail;
+    document.getElementById('qAnswer').classList.remove('show');
+    document.getElementById('btnRevealRow').style.display = 'flex';
+    document.getElementById('playerBtnRow').classList.remove('show');
+    document.getElementById('questionModal').classList.add('active');
+    cell.classList.add('used');
+    cell.textContent = '';
+}
+
+function revealAnswer() {
+    document.getElementById('qAnswer').classList.add('show');
+    document.getElementById('btnRevealRow').style.display = 'none';
+    document.getElementById('playerBtnRow').classList.add('show');
+}
+
+function awardPoints(playerIdx) {
+    if (playerIdx >= 0) { players[playerIdx].score += currentPoints; currentPlayer = playerIdx; }
+    else { currentPlayer = (currentPlayer + 1) % 3; }
+    answered++;
+    for (var i = 0; i < 3; i++) document.getElementById('pScore' + i).textContent = players[i].score.toLocaleString('da-DK');
+    document.getElementById('progressFill').style.width = (answered / total * 100) + '%';
+    document.getElementById('progressText').textContent = answered + ' / ' + total;
+    document.getElementById('questionModal').classList.remove('active');
+    updateTurn();
+    if (answered >= total) setTimeout(showFinal, 600);
+}
+
+function showFinal() {
+    var sorted = players.map(function(p, i) { return { name: p.name, score: p.score, color: playerColors[i] }; });
+    sorted.sort(function(a, b) { return b.score - a.score; });
+    var ranks = ['first', 'second', 'third'];
+    var medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+    var podium = document.getElementById('podium');
+    podium.innerHTML = '';
+    sorted.forEach(function(p, i) {
+        var place = document.createElement('div');
+        place.className = 'podium-place ' + ranks[i];
+        place.innerHTML = '<div class="podium-rank">' + medals[i] + '</div><div class="podium-name">' + p.name + '</div><div class="podium-score">' + p.score.toLocaleString('da-DK') + '</div>';
+        podium.appendChild(place);
+    });
+    document.getElementById('finalOverlay').classList.add('active');
+}
+
+function fullReset() {
+    for (var i = 0; i < 3; i++) players[i].score = 0;
+    answered = 0; currentPlayer = 0; currentPoints = 0;
+    for (var i = 0; i < 3; i++) document.getElementById('pScore' + i).textContent = '0';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressText').textContent = '0 / 25';
+    document.getElementById('finalOverlay').classList.remove('active');
+    var cells = document.querySelectorAll('.cell');
+    var idx = 0;
+    for (var r = 0; r < 5; r++) for (var c = 0; c < 5; c++) { cells[idx].classList.remove('used'); cells[idx].textContent = pointValues[r]; idx++; }
+    document.getElementById('setupOverlay').classList.remove('hidden');
+}
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') document.getElementById('questionModal').classList.remove('active'); });
+</script>
+
+</body>
+</html>
