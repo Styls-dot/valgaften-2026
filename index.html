@@ -1390,7 +1390,7 @@ async function fetchLiveData() {
         const turnoutPct = extractField(fields, 'TurnoutPct') || 0;
         const resultType = extractField(fields, 'ResultType') || 'Setup';
 
-        document.getElementById('countedPct').textContent = countedPct.toFixed(1) + '%';
+        document.getElementById('countedPct').textContent = countedPct.toFixed(2) + '%';
         document.getElementById('countedBar').style.width = countedPct + '%';
         document.getElementById('turnoutPct').textContent = turnoutPct.toFixed(1) + '%';
 
@@ -1612,7 +1612,7 @@ async function fetchStorkredsData() {
             var el = document.getElementById('sk-' + i);
             if (el) {
                 el.querySelector('.sk-bar-fill').style.width = counted + '%';
-                el.querySelector('.sk-pct').textContent = counted.toFixed(1) + '%';
+                el.querySelector('.sk-pct').textContent = counted.toFixed(2) + '%';
 
                 // Vis valgsteder i storkreds
                 var nameEl = el.querySelector('.sk-name');
