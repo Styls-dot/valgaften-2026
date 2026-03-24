@@ -530,6 +530,99 @@
             color: #fff;
         }
 
+        /* Storkreds */
+        .storkreds-item {
+            background: #0d1222;
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #1e2640;
+        }
+
+        .storkreds-item .sk-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .storkreds-item .sk-bar {
+            flex: 1;
+            height: 6px;
+            background: #1e2640;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .storkreds-item .sk-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+            background: linear-gradient(90deg, #c8102e, #e84060);
+        }
+
+        .storkreds-item .sk-pct {
+            font-size: 13px;
+            font-weight: 700;
+            color: #e84060;
+            width: 45px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .storkreds-item .sk-status {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            width: 55px;
+            text-align: center;
+        }
+
+        .storkreds-item .sk-status.done { background: #152a15; color: #2dc84d; }
+        .storkreds-item .sk-status.counting { background: #2a2515; color: #ffd15c; }
+        .storkreds-item .sk-status.waiting { background: #1e2640; color: #5a6280; }
+
+        /* Votes bars */
+        .vote-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            gap: 10px;
+        }
+
+        .vote-row .vr-letter {
+            width: 28px; height: 28px; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; color: #fff; flex-shrink: 0;
+        }
+
+        .vote-row .vr-name {
+            width: 140px; font-size: 12px; font-weight: 500; flex-shrink: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .vote-row .vr-bar {
+            flex: 1; height: 18px; background: #0d1222; border-radius: 4px;
+            overflow: hidden; position: relative;
+        }
+
+        .vote-row .vr-bar-fill {
+            height: 100%; border-radius: 4px; transition: width 1.5s ease; min-width: 1px;
+        }
+
+        .vote-row .vr-votes {
+            width: 90px; text-align: right; font-size: 13px; font-weight: 700;
+            color: #fff; flex-shrink: 0; font-variant-numeric: tabular-nums;
+        }
+
         /* Responsiv */
         @media (max-width: 1000px) {
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
@@ -594,6 +687,28 @@
                 <div id="resultType" style="font-size:12px; font-weight:600; color:#e84060; background:#2a1520; padding:4px 10px; border-radius:6px;">VENTER</div>
             </div>
         </div>
+    </div>
+
+    <!-- STORKREDS OPTÆLLING -->
+    <div class="card" style="margin-bottom: 20px;" id="storkredsCard">
+        <h3>Optælling per storkreds</h3>
+        <div id="storkredsGrid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #1e2640;">
+            <div>
+                <span style="font-size:13px; color:#8892a8;">Totalt afgivne stemmer:</span>
+                <span id="totalVotesDisplay" style="font-size:20px; font-weight:700; color:#fff; margin-left:8px; font-variant-numeric:tabular-nums;">0</span>
+            </div>
+            <div>
+                <span style="font-size:13px; color:#8892a8;">Gyldige stemmer:</span>
+                <span id="validVotesDisplay" style="font-size:20px; font-weight:700; color:#fff; margin-left:8px; font-variant-numeric:tabular-nums;">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEMMER PER PARTI -->
+    <div class="card" style="margin-bottom: 20px;" id="votesCard">
+        <h3>Afgivne stemmer per parti</h3>
+        <div id="votesBars"></div>
     </div>
 
     <!-- BLOK-OVERBLIK -->
@@ -1338,6 +1453,109 @@ async function fetchLiveData() {
         updateStatusText('Fejl: ' + err.message + ' · ' + new Date().toLocaleTimeString('da-DK'));
     }
 }
+
+// ====== STORKREDS OPTÆLLING ======
+const storkredsNames = [
+    'København', 'Kbh. Omegn', 'Nordsjælland', 'Bornholm', 'Sjælland',
+    'Fyn', 'Sydjylland', 'Østjylland', 'Vestjylland', 'Nordjylland'
+];
+
+// Byg storkreds-grid
+var skGrid = document.getElementById('storkredsGrid');
+for (var si = 0; si < 10; si++) {
+    var skItem = document.createElement('div');
+    skItem.className = 'storkreds-item';
+    skItem.id = 'sk-' + (si + 1);
+    skItem.innerHTML =
+        '<div class="sk-name">' + storkredsNames[si] + '</div>' +
+        '<div class="sk-bar"><div class="sk-bar-fill" style="width:0%"></div></div>' +
+        '<div class="sk-pct">0%</div>' +
+        '<div class="sk-status waiting">Venter</div>';
+    skGrid.appendChild(skItem);
+}
+
+// Byg stemme-bars
+var votesBars = document.getElementById('votesBars');
+parties.forEach(function(p) {
+    var row = document.createElement('div');
+    row.className = 'vote-row';
+    row.id = 'vr-' + p.id;
+    row.innerHTML =
+        '<div class="vr-letter" style="background:' + p.color + '">' + p.id + '</div>' +
+        '<div class="vr-name">' + p.name + '</div>' +
+        '<div class="vr-bar"><div class="vr-bar-fill" style="width:0%; background:' + p.color + '; opacity:0.8;"></div></div>' +
+        '<div class="vr-votes">0</div>';
+    votesBars.appendChild(row);
+});
+
+async function fetchStorkredsData() {
+    try {
+        var totalReceived = 0;
+        var totalValid = 0;
+
+        for (var i = 1; i <= 10; i++) {
+            var res = await fetch(DR_API + 'FV2026-geography-results/storkreds-' + i);
+            if (!res.ok) continue;
+            var json = await res.json();
+            var f = json.fields;
+
+            var counted = extractField(f, 'CountedPct') || 0;
+            var received = extractField(f, 'TotalReceivedVotes') || 0;
+            var valid = extractField(f, 'TotalValidReceivedVotes') || 0;
+            var rType = extractField(f, 'ResultType') || 'Setup';
+
+            totalReceived += received;
+            totalValid += valid;
+
+            var el = document.getElementById('sk-' + i);
+            if (el) {
+                el.querySelector('.sk-bar-fill').style.width = counted + '%';
+                el.querySelector('.sk-pct').textContent = counted.toFixed(1) + '%';
+                var statusEl = el.querySelector('.sk-status');
+                if (rType === 'Final') {
+                    statusEl.textContent = 'Færdig';
+                    statusEl.className = 'sk-status done';
+                } else if (counted > 0 || rType === 'Preliminary' || rType === 'ExitPoll') {
+                    statusEl.textContent = 'Tæller';
+                    statusEl.className = 'sk-status counting';
+                } else {
+                    statusEl.textContent = 'Venter';
+                    statusEl.className = 'sk-status waiting';
+                }
+            }
+        }
+
+        document.getElementById('totalVotesDisplay').textContent = totalReceived.toLocaleString('da-DK');
+        document.getElementById('validVotesDisplay').textContent = totalValid.toLocaleString('da-DK');
+
+    } catch (err) {
+        console.error('Storkreds fetch fejl:', err);
+    }
+}
+
+function updateVotesBars() {
+    var maxVotes = 0;
+    parties.forEach(function(p) {
+        if (p.liveVotes && p.liveVotes > maxVotes) maxVotes = p.liveVotes;
+    });
+    if (maxVotes === 0) maxVotes = 1;
+
+    parties.forEach(function(p) {
+        var row = document.getElementById('vr-' + p.id);
+        if (!row) return;
+        var votes = p.liveVotes || 0;
+        row.querySelector('.vr-bar-fill').style.width = (votes / maxVotes * 100) + '%';
+        row.querySelector('.vr-votes').textContent = votes.toLocaleString('da-DK');
+    });
+}
+
+// Kald efter hver live-fetch
+var origFetch = fetchLiveData;
+fetchLiveData = async function() {
+    await origFetch();
+    updateVotesBars();
+    await fetchStorkredsData();
+};
 
 // Start polling
 fetchLiveData();
