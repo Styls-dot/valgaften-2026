@@ -154,6 +154,24 @@
         .sw-val{width:45px;text-align:right;font-size:11px;font-weight:700;flex-shrink:0;font-variant-numeric:tabular-nums}
         .sw-val.pos{color:#2dc84d}.sw-val.neg{color:#e84060}
 
+        /* Regeringsmuligheder */
+        .gov-option{background:#0a0e14;border-radius:10px;padding:14px;margin-bottom:8px;border-left:4px solid #1e2640;transition:border-color 0.5s}
+        .gov-option.likely{border-left-color:#2dc84d}
+        .gov-option.possible{border-left-color:#ffd15c}
+        .gov-option.unlikely{border-left-color:#e84060}
+        .gov-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+        .gov-name{font-size:14px;font-weight:700;color:#fff}
+        .gov-chance{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+        .gov-chance.likely{color:#2dc84d}
+        .gov-chance.possible{color:#ffd15c}
+        .gov-chance.unlikely{color:#e84060}
+        .gov-parties{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+        .gov-parties .gp{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+        .gov-meta{display:flex;gap:12px;font-size:10px;color:#5a6280}
+        .gov-meta b{color:#c8d4e0}
+        .gov-bar{height:4px;background:#141c2a;border-radius:2px;margin-top:6px;overflow:hidden}
+        .gov-bar-fill{height:100%;border-radius:2px;transition:width 1.5s}
+
         @media(max-width:600px){.p-bar,.p-votes{display:none}.sk-grid{grid-template-columns:1fr}.clock{font-size:16px}.sw-name{display:none}}
     </style>
 </head>
@@ -241,6 +259,12 @@
             <div id="swingBars"></div>
             <div style="font-size:9px;color:#3a4a5a;margin-top:8px">Baseret på rene optalte stemmer sammenlignet med FV2022 landsresultat.</div>
         </div>
+    </div>
+
+    <!-- REGERINGSMULIGHEDER -->
+    <div class="card" style="margin-bottom:12px;border-color:#1a2a20">
+        <h3 style="color:#2dc84d">Regeringsmuligheder <span class="badge badge-live" id="govTick">–</span></h3>
+        <div id="govOptions"></div>
     </div>
 
     <!-- Feed -->
@@ -521,7 +545,88 @@ function updateModelInsight(prog){
     document.getElementById('bpMp').textContent=mP.toFixed(1)+'%';
 }
 
-addFeed('Dashboard startet – henter data hvert 10. sekund');
+// ====== REGERINGSMULIGHEDER ======
+function calcGovOptions(prog){
+    // Byg parti-mandatkort
+    var sm={};
+    prog.forEach(function(p){sm[p.id]=p.seats});
+
+    // Definer mulige koalitioner
+    var coalitions=[
+        {name:'Rød blok ren (A+F+Ø+B+Å)',parties:['A','F','Ø','B','Å'],type:'red',desc:'Klassisk rød blok uden Moderaterne'},
+        {name:'A + M (SVM-light)',parties:['A','M'],type:'center',desc:'Socialdemokraterne + Moderaterne, mindretalsregering'},
+        {name:'SVM genvalg (A+V+M)',parties:['A','V','M'],type:'center',desc:'Genvalg af den afgående regering'},
+        {name:'A + F + M',parties:['A','F','M'],type:'center-left',desc:'Socialdemokraterne, SF og Moderaterne'},
+        {name:'Rød blok + M',parties:['A','F','Ø','B','Å','M'],type:'red',desc:'Rød blok med Moderaterne som støtte'},
+        {name:'Blå blok ren (V+I+C+Æ+O+H)',parties:['V','I','C','Æ','O','H'],type:'blue',desc:'Samlet blå blok'},
+        {name:'Blå blok + M',parties:['V','I','C','Æ','O','H','M'],type:'blue',desc:'Blå blok med Moderaternes støtte'},
+        {name:'A alene (mindretals)',parties:['A'],type:'red',desc:'Ren S-regering med skiftende flertal'},
+        {name:'A + F + B',parties:['A','F','B'],type:'center-left',desc:'Socialdemokraterne, SF og Radikale'},
+        {name:'A + F + B + Ø',parties:['A','F','B','Ø'],type:'red',desc:'Centrum-venstre koalition'},
+    ];
+
+    var results=[];
+    coalitions.forEach(function(c){
+        var totalSeats=0;
+        c.parties.forEach(function(pid){totalSeats+=(sm[pid]||0)});
+        var hasMajority=totalSeats>=90;
+        var margin=totalSeats-90;
+
+        // Beregn sandsynlighed baseret på:
+        // 1) Har de flertal?
+        // 2) Hvor bredt er flertallet?
+        // 3) Politisk realisme
+        var chance=0;
+        if(hasMajority){
+            chance=40+Math.min(margin*3,40); // 40-80% base
+            // Bonus for realistiske koalitioner
+            if(c.parties.indexOf('A')!==-1)chance+=10; // A er sandsynlig statsministerparti
+            if(c.parties.length<=3)chance+=5; // Fewer parties = more likely
+            if(c.parties.length>=5)chance-=10; // mange partier = svært
+        } else {
+            chance=Math.max(2,15+margin*3); // under flertal
+        }
+        chance=Math.max(1,Math.min(95,chance));
+
+        var status=chance>=50?'likely':(chance>=20?'possible':'unlikely');
+        results.push({name:c.name,parties:c.parties,seats:totalSeats,margin:margin,chance:chance,status:status,desc:c.desc,type:c.type});
+    });
+
+    // Sorter efter sandsynlighed
+    results.sort(function(a,b){return b.chance-a.chance});
+
+    // Render
+    var govEl=document.getElementById('govOptions');
+    govEl.innerHTML='';
+    document.getElementById('govTick').textContent=ts();
+
+    results.forEach(function(r){
+        var d=document.createElement('div');
+        d.className='gov-option '+r.status;
+
+        var partyBadges=r.parties.map(function(pid){
+            var p=parties.find(function(pp){return pp.id===pid});
+            return '<div class="gp" style="background:'+(p?p.color:'#5a6280')+'">'+pid+'</div>';
+        }).join('');
+
+        d.innerHTML=
+            '<div class="gov-head">'+
+                '<div class="gov-name">'+r.name+'</div>'+
+                '<div class="gov-chance '+r.status+'">'+r.chance+'%</div>'+
+            '</div>'+
+            '<div class="gov-parties">'+partyBadges+'</div>'+
+            '<div class="gov-meta">'+
+                '<div><b>'+r.seats+'</b> mandater</div>'+
+                '<div>'+(r.margin>=0?'<span style="color:#2dc84d">+'+r.margin+' over flertal</span>':'<span style="color:#e84060">'+r.margin+' fra flertal</span>')+'</div>'+
+                '<div>'+r.desc+'</div>'+
+            '</div>'+
+            '<div class="gov-bar"><div class="gov-bar-fill" style="width:'+r.chance+'%;background:'+(r.status==='likely'?'#2dc84d':(r.status==='possible'?'#ffd15c':'#e84060'))+'"></div></div>';
+
+        govEl.appendChild(d);
+    });
+}
+
+addFeed('Dashboard startet – henter data hvert 8. sekund');
 
 // ====== MAIN FETCH ======
 async function fetchAll(){
@@ -655,6 +760,7 @@ async function fetchAll(){
             p.ownPct=pr2?pr2.pct:0;
         });
         updateModelInsight(prog);
+        calcGovOptions(prog);
 
         // 4) Update party table (sorted)
         var sorted=parties.slice().sort(function(a,b){return b.pct-a.pct});
